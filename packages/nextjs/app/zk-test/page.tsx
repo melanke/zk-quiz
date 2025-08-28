@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { Address, AddressInput } from "~~/components/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
@@ -77,7 +78,7 @@ export default function ZKTest() {
       setExpectedAnswerHash(hash.toString());
     } catch (error) {
       console.error("Error generating hash:", error);
-      alert("Failed to generate hash");
+      toast.error("Failed to generate hash");
     } finally {
       setIsGeneratingHash(false);
     }
@@ -85,7 +86,7 @@ export default function ZKTest() {
 
   const handleGenerateProof = async () => {
     if (!answer || !expectedAnswerHash || !userAddress) {
-      alert("Please fill all fields and generate hash first");
+      toast.error("Please fill all fields and generate hash first");
       return;
     }
 
@@ -100,7 +101,7 @@ export default function ZKTest() {
       setProof(generatedProof);
     } catch (error) {
       console.error("Error generating proof:", error);
-      alert("Failed to generate proof");
+      toast.error("Failed to generate proof");
     } finally {
       setIsGeneratingProof(false);
     }

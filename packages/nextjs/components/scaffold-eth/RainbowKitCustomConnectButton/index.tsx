@@ -9,12 +9,24 @@ import { Address } from "viem";
 import { Button } from "~~/components/ui/button";
 import { useNetworkColor } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
+import { cn } from "~~/lib/utils";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
+
+export interface RainbowKitCustomConnectButtonProps {
+  /**
+   * Size of the connect button
+   */
+  size?: "default" | "sm" | "lg" | "icon";
+  /**
+   * Additional CSS classes for the connect button
+   */
+  className?: string;
+}
 
 /**
  * Custom Wagmi Connect Button (watch balance + custom design)
  */
-export const RainbowKitCustomConnectButton = () => {
+export const RainbowKitCustomConnectButton = ({ size = "sm", className }: RainbowKitCustomConnectButtonProps = {}) => {
   const networkColor = useNetworkColor();
   const { targetNetwork } = useTargetNetwork();
 
@@ -31,7 +43,7 @@ export const RainbowKitCustomConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <Button size="sm" onClick={openConnectModal} type="button">
+                  <Button size={size} onClick={openConnectModal} type="button" className={cn(className)}>
                     Connect Wallet
                   </Button>
                 );

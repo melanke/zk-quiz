@@ -52,11 +52,6 @@ Visit the app on: `http://localhost:3000`.
 
 ## Known issues to be fixed:
 
-### General Styling
-- header: The home page should be /quiz/
-- Remove the ZK Test page
-- Replace alerts for toasts on the whole app
-
 ### /quiz
 - The title doesn't have contrast
 - Remove the ID from the card

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
@@ -36,13 +37,13 @@ export const QuizActions = () => {
 
   const handleSubmitCheckins = async () => {
     if (!address) {
-      alert("Please connect your wallet first.");
+      toast.error("Please connect your wallet first.");
       return;
     }
 
     const pendingCheckins = getPendingCheckins();
     if (pendingCheckins.length === 0) {
-      alert("No pending check-ins.");
+      toast.warning("No pending check-ins.");
       return;
     }
 
@@ -73,7 +74,7 @@ export const QuizActions = () => {
 
           console.log(`Check-in submitted for question ${checkin.answerHash.slice(0, 10)}...`);
 
-          alert(`${pendingCheckins.length} check-ins submitted successfully!`);
+          toast.success(`${pendingCheckins.length} check-ins submitted successfully!`);
           setPendingCount(0);
         } catch (error) {
           console.error(`Error submitting check-in for ${checkin.answerHash}:`, error);
@@ -82,7 +83,7 @@ export const QuizActions = () => {
       }
     } catch (error) {
       console.error("Error submitting check-ins:", error);
-      alert("Error submitting check-ins. Please try again.");
+      toast.error("Error submitting check-ins. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

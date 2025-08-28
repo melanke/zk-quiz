@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircle, Loader2 } from "lucide-react";
+import { useAccount } from "wagmi";
 import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~~/components/ui/card";
@@ -12,9 +14,21 @@ import { hasAnswered } from "~~/utils/localStorage";
 // Removed bytes32ToString function as questions are now stored as strings
 
 export default function QuizHome() {
+  const router = useRouter();
+  const { address: connectedAddress, isConnecting } = useAccount();
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
+
+  // Redirect based on connection status
+  useEffect(() => {
+    if (!isConnecting) {
+      if (!connectedAddress) {
+        // Not connected, redirect to home
+        router.push("/");
+      }
+    }
+  }, [connectedAddress, isConnecting, router]);
 
   // Get total number of root quests
   const { data: totalRootQuests } = useScaffoldReadContract({

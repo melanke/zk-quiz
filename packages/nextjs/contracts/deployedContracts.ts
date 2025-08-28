@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     YourContract: {
-      address: "0x45009dd3abbe29db54fc5d893ceaa98a624882df",
+      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
       abi: [
         {
           type: "constructor",
@@ -148,10 +148,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 25,
+      deployedOnBlock: 1,
     },
-    Verifier: {
-      address: "0x82dc47734901ee7d4f4232f398752cb9dd5daccc",
+    AnswerVerifier: {
+      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
       abi: [
         {
           type: "function",
@@ -160,7 +160,7 @@ const deployedContracts = {
             {
               name: "proof",
               type: "tuple",
-              internalType: "struct Verifier.Proof",
+              internalType: "struct AnswerVerifier.Proof",
               components: [
                 {
                   name: "a",
@@ -232,10 +232,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 8,
+      deployedOnBlock: 2,
     },
     Quiz: {
-      address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2",
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
       abi: [
         {
           type: "constructor",
@@ -670,91 +670,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 26,
-    },
-    AnswerVerifier: {
-      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
-      abi: [
-        {
-          type: "function",
-          name: "verifyTx",
-          inputs: [
-            {
-              name: "proof",
-              type: "tuple",
-              internalType: "struct AnswerVerifier.Proof",
-              components: [
-                {
-                  name: "a",
-                  type: "tuple",
-                  internalType: "struct Pairing.G1Point",
-                  components: [
-                    {
-                      name: "X",
-                      type: "uint256",
-                      internalType: "uint256",
-                    },
-                    {
-                      name: "Y",
-                      type: "uint256",
-                      internalType: "uint256",
-                    },
-                  ],
-                },
-                {
-                  name: "b",
-                  type: "tuple",
-                  internalType: "struct Pairing.G2Point",
-                  components: [
-                    {
-                      name: "X",
-                      type: "uint256[2]",
-                      internalType: "uint256[2]",
-                    },
-                    {
-                      name: "Y",
-                      type: "uint256[2]",
-                      internalType: "uint256[2]",
-                    },
-                  ],
-                },
-                {
-                  name: "c",
-                  type: "tuple",
-                  internalType: "struct Pairing.G1Point",
-                  components: [
-                    {
-                      name: "X",
-                      type: "uint256",
-                      internalType: "uint256",
-                    },
-                    {
-                      name: "Y",
-                      type: "uint256",
-                      internalType: "uint256",
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              name: "input",
-              type: "uint256[3]",
-              internalType: "uint256[3]",
-            },
-          ],
-          outputs: [
-            {
-              name: "r",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-      ],
-      inheritedFunctions: {},
-      deployedOnBlock: 26,
+      deployedOnBlock: 3,
     },
   },
 } as const;

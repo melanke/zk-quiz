@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { hardhat } from "viem/chains";
 import { Bars3Icon } from "@heroicons/react/24/outline";
+import { Logo } from "~~/components/Logo";
 import { QuizActions } from "~~/components/QuizActions";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { Button } from "~~/components/ui/button";
@@ -66,12 +66,10 @@ export const Header = () => {
       <div className="container flex h-14 items-center px-4">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <div className="relative h-8 w-8">
-              <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
-            </div>
+            <Logo className="h-8 w-8 cursor-pointer text-foreground" />
             <div className="flex flex-col">
-              <span className="font-bold text-sm">Scaffold-ETH</span>
-              <span className="text-xs text-muted-foreground">Ethereum dev stack</span>
+              <span className="font-bold text-sm">ZK Quiz</span>
+              <span className="text-xs text-muted-foreground">Proof of knowledge</span>
             </div>
           </Link>
         </div>
@@ -87,12 +85,10 @@ export const Header = () => {
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
             <Link href="/" className="flex items-center space-x-2" onClick={() => setIsOpen(false)}>
-              <div className="relative h-8 w-8">
-                <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
-              </div>
+              <Logo className="h-8 w-8 cursor-pointer text-foreground" />
               <div className="flex flex-col">
-                <span className="font-bold text-sm">Scaffold-ETH</span>
-                <span className="text-xs text-muted-foreground">Ethereum dev stack</span>
+                <span className="font-bold text-sm">ZK Quiz</span>
+                <span className="text-xs text-muted-foreground">Proof of knowledge</span>
               </div>
             </Link>
             <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">

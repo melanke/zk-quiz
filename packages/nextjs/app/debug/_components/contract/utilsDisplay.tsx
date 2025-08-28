@@ -2,6 +2,7 @@ import { ReactElement, useState } from "react";
 import { TransactionBase, TransactionReceipt, formatEther, isAddress, isHex } from "viem";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/solid";
 import { Address } from "~~/components/scaffold-eth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~~/components/ui/tooltip";
 import { replacer } from "~~/utils/scaffold-eth/common";
 
 type DisplayContent =
@@ -60,14 +61,18 @@ const NumberDisplay = ({ value }: { value: bigint }) => {
   return (
     <div className="flex items-baseline">
       {isEther ? "Ξ" + formatEther(value) : String(value)}
-      <span
-        className="tooltip tooltip-secondary font-sans ml-2"
-        data-tip={isEther ? "Multiply by 1e18" : "Divide by 1e18"}
-      >
-        <button className="btn btn-ghost btn-circle btn-xs" onClick={() => setIsEther(!isEther)}>
-          <ArrowsRightLeftIcon className="h-3 w-3 opacity-65" />
-        </button>
-      </span>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="btn btn-ghost btn-circle btn-xs ml-2" onClick={() => setIsEther(!isEther)}>
+              <ArrowsRightLeftIcon className="h-3 w-3 opacity-65" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isEther ? "Multiply by 1e18" : "Divide by 1e18"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };

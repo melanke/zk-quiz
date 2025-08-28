@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CheckCircle, Info, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
@@ -44,7 +45,7 @@ export default function CreateQuestionPage() {
 
   const handleCalculateHash = async () => {
     if (!answer.trim()) {
-      alert("Please enter an answer.");
+      toast.error("Please enter an answer.");
       return;
     }
 
@@ -65,7 +66,7 @@ export default function CreateQuestionPage() {
       // The useScaffoldReadContract will automatically check if it exists in contract
     } catch (error) {
       console.error("Error calculating hash:", error);
-      alert("Error calculating answer hash.");
+      toast.error("Error calculating answer hash.");
     } finally {
       setIsCalculating(false);
     }
@@ -87,22 +88,22 @@ export default function CreateQuestionPage() {
 
   const handleSubmitQuestion = async () => {
     if (!address) {
-      alert("Please connect your wallet first.");
+      toast.error("Please connect your wallet first.");
       return;
     }
 
     if (!question.trim() || !answer.trim()) {
-      alert("Please fill in all fields.");
+      toast.error("Please fill in all fields.");
       return;
     }
 
     if (!answerHash) {
-      alert("Please calculate the hash first.");
+      toast.error("Please calculate the hash first.");
       return;
     }
 
     if (questionExists) {
-      alert("This question already exists in the contract!");
+      toast.error("This question already exists in the contract!");
       return;
     }
 
@@ -120,11 +121,11 @@ export default function CreateQuestionPage() {
       saveQuestion(answerHash, question.trim(), answer.trim());
       markQuestionSubmitted(answerHash);
 
-      alert("Question created successfully!");
+      toast.success("Question created successfully!");
       router.push("/quiz");
     } catch (error) {
       console.error("Error submitting question:", error);
-      alert("Error submitting question. Please try again.");
+      toast.error("Error submitting question. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
