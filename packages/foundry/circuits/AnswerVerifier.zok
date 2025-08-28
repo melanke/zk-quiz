@@ -1,0 +1,7 @@
+import "hashes/poseidon/poseidon.zok";
+
+def main(private field answer, field address, field expectedAnswerHash) -> bool {
+    field answerHash = poseidon([answer]);
+    assert(answerHash == expectedAnswerHash);
+    return true;
+}

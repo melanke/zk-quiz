@@ -1,21 +1,11 @@
-# 🏗 Scaffold-ETH 2
+# ZK Quiz
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+Allows creating questions with a hidden response that can be safely answered without compromising it's secret.
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
-
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
-
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
-
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+- User A inputs the question and response, which will be hashed using poseidon and stored on the contract;
+- User B can answer and test if it matches locally. Then they can create a proof they know the answer attached to their address and submit to the contract, which will validate and save the "check-in" in the contract.
+- No one will be to know discover the answer because it's hidden within the proof.
+- No one will be able to replicate the request because the proof is bond to User B's address.
 
 ## Requirements
 
@@ -27,12 +17,12 @@ Before you begin, you need to install the following tools:
 
 ## Quickstart
 
-To get started with Scaffold-ETH 2, follow the steps below:
+To get started, follow the steps below:
 
 1. Install dependencies if it was skipped in CLI:
 
 ```
-cd my-dapp-example
+cd my-zk-quiz
 yarn install
 ```
 
@@ -58,59 +48,41 @@ This command deploys a test smart contract to the local network. The contract is
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+Visit the app on: `http://localhost:3000`. 
 
-Run smart contract test with `yarn foundry:test`
+## Known issues to be fixed:
 
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
+### General Styling
+- layout: it's using default SE template, we should use something more similar to shadcn default style
+- header: The home page should be /quiz/
+- Remove the ZK Test page
+- Replace alerts for toasts on the whole app
+- The textarea rounded borders are strange (present in /quiz/create and other pages)
 
-## 🚀 Setup Ponder Extension
+### /quiz
+- The title doesn't have contrast
+- Remove the ID from the card
 
-This extension allows to use Ponder (https://ponder.sh/) for event indexing on an SE-2 dapp.
+### /quiz/create
+- We don't need that "Variable length" text
+- Remove "Calculate Answer Hash" button and the two cards below it, the hash should be calculated and checked for duplicates as you type with a debounce. And we should only receive a message if it finds duplicates
 
-Ponder is an open-source framework for blockchain application backends. With Ponder, you can rapidly build & deploy an API that serves custom data from smart contracts on any EVM blockchain.
+### /quiz/question
+- Don't show the hash
+- Remove the button "Verify Answer", check if true as you type with a debounce
+- Show questions that depends on it
+- When answering a question that depends on other, only allow answering if you got that first right, and show an input for the previous answer that will be pré-filled with the answer it got from the localstorage
 
-### Config
+### /quiz/profile
+- On the questions card it shouldn't show the hash and on "Questions Answered" it's not showing the Question text
 
-Ponder config (```packages/ponder/ponder.config.ts```) is set automatically from the deployed contracts and using the first blockchain network setup at ```packages/nextjs/scaffold.config.ts```.
+### ???
+- Both on question card and question details page the "Answered" badge should be different if the question is not submitted yet, maybe it should show "Pending"
+- Both on the "Who answered this question" card and the user profile page, we should fix the avatar using the one from ENS. And the address should be shown without a duplicated avatar.
 
-### Design your schema
+### Submitting Checkins
+- Instead of a button on the header, let's have a persistent panel on the botton corner that shows all pending questions and a checkbox on each (marked as default) to signal if you want to submit that question; Fix the sending mechanism to send all questions in the same transaction or change the contract to accept multiple.
 
-You can define your Ponder data schema on the file at ```packages/ponder/ponder.schema.ts``` following the Ponder documentation (https://ponder.sh/docs/schema).
-
-### Indexing data
-
-You can index events by adding files to ```packages/ponder/src/``` (https://ponder.sh/docs/indexing/write-to-the-database)
-
-### Start the development server
-
-Run ```yarn ponder:dev``` to start the Ponder development server, for indexing and serving the GraphQL API endpoint at http://localhost:42069
-
-### Query the GraphQL API
-
-With the dev server running, open http://localhost:42069 in your browser to use the GraphiQL interface. GraphiQL is a useful tool for exploring your schema and testing queries during development. (https://ponder.sh/docs/query/graphql)
-
-You can query data on a page using ```@tanstack/react-query```. Check the code at ```packages/nextjs/app/greetings/page.ts``` to get the greetings updates data and show it.
-
-### Deploy
-
-To deploy the Ponder indexer please refer to the Ponder Deploy documentation https://ponder.sh/docs/production/deploy
-
-At **Settings** -> **Deploy** -> you must set **Custom Start Command** to ```yarn ponder:start```.
-
-And then you have to set up the ```NEXT_PUBLIC_PONDER_URL``` env variable on your SE-2 dapp to use the deployed ponder indexer.
-
-
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+### Hashtags and Mentions
+- Use Ponder to index hashtags and mentions
+- 

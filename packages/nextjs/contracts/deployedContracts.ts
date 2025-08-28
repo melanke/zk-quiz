@@ -4,6 +4,759 @@
  */
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
-const deployedContracts = {} as const;
+const deployedContracts = {
+  31337: {
+    YourContract: {
+      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "_owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "receive",
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "greeting",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "premium",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "setGreeting",
+          inputs: [
+            {
+              name: "_newGreeting",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "totalCounter",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "userGreetingCounter",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "withdraw",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "GreetingChange",
+          inputs: [
+            {
+              name: "greetingSetter",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newGreeting",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "premium",
+              type: "bool",
+              indexed: false,
+              internalType: "bool",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 19,
+    },
+    Verifier: {
+      address: "0x82dc47734901ee7d4f4232f398752cb9dd5daccc",
+      abi: [
+        {
+          type: "function",
+          name: "verifyTx",
+          inputs: [
+            {
+              name: "proof",
+              type: "tuple",
+              internalType: "struct Verifier.Proof",
+              components: [
+                {
+                  name: "a",
+                  type: "tuple",
+                  internalType: "struct Pairing.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+                {
+                  name: "b",
+                  type: "tuple",
+                  internalType: "struct Pairing.G2Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                  ],
+                },
+                {
+                  name: "c",
+                  type: "tuple",
+                  internalType: "struct Pairing.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "input",
+              type: "uint256[3]",
+              internalType: "uint256[3]",
+            },
+          ],
+          outputs: [
+            {
+              name: "r",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 8,
+    },
+    Quiz: {
+      address: "0x067c804bb006836469379d4a2a69a81803bd1f45",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "verifierAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "checkIn",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "checkInBlock",
+          inputs: [
+            {
+              name: "user",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "answerHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "checkInQuest",
+          inputs: [
+            {
+              name: "proof",
+              type: "tuple",
+              internalType: "struct IZokratesVerifier.Proof",
+              components: [
+                {
+                  name: "a",
+                  type: "tuple",
+                  internalType: "struct IZokratesVerifier.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+                {
+                  name: "b",
+                  type: "tuple",
+                  internalType: "struct IZokratesVerifier.G2Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                  ],
+                },
+                {
+                  name: "c",
+                  type: "tuple",
+                  internalType: "struct IZokratesVerifier.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "publicInputs",
+              type: "uint256[3]",
+              internalType: "uint256[3]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "childrenCount",
+          inputs: [
+            {
+              name: "dependencyHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "createQuest",
+          inputs: [
+            {
+              name: "question",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "answerHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "dependency",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getDependencies",
+          inputs: [
+            {
+              name: "answerHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "hasCheckedIn",
+          inputs: [
+            {
+              name: "user",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "answerHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "listQuestsByDependency",
+          inputs: [
+            {
+              name: "dependencyHash",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "start",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "limit",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "listRootQuests",
+          inputs: [
+            {
+              name: "start",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "limit",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "questDependency",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "questQuestions",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "questsByDependency",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "rootQuests",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "rootQuestsLength",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "verifier",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IZokratesVerifier",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "CheckedIn",
+          inputs: [
+            {
+              name: "user",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "answerHash",
+              type: "uint256",
+              indexed: true,
+              internalType: "uint256",
+            },
+            {
+              name: "blockNumber",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "QuestCreated",
+          inputs: [
+            {
+              name: "answerHash",
+              type: "uint256",
+              indexed: true,
+              internalType: "uint256",
+            },
+            {
+              name: "creator",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "question",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "dependency",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 20,
+    },
+    AnswerVerifier: {
+      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9",
+      abi: [
+        {
+          type: "function",
+          name: "verifyTx",
+          inputs: [
+            {
+              name: "proof",
+              type: "tuple",
+              internalType: "struct AnswerVerifier.Proof",
+              components: [
+                {
+                  name: "a",
+                  type: "tuple",
+                  internalType: "struct Pairing.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+                {
+                  name: "b",
+                  type: "tuple",
+                  internalType: "struct Pairing.G2Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256[2]",
+                      internalType: "uint256[2]",
+                    },
+                  ],
+                },
+                {
+                  name: "c",
+                  type: "tuple",
+                  internalType: "struct Pairing.G1Point",
+                  components: [
+                    {
+                      name: "X",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "Y",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "input",
+              type: "uint256[3]",
+              internalType: "uint256[3]",
+            },
+          ],
+          outputs: [
+            {
+              name: "r",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 20,
+    },
+  },
+} as const;
 
 export default deployedContracts satisfies GenericContractsDeclaration;

@@ -1,0 +1,27 @@
+# Cursor IDE Rules
+
+## Language Rules
+- Always write code in English
+- All variable names, function names, class names must be in English
+- All comments must be in English
+- All user-facing strings, error messages, and UI text must be in English
+- All documentation and README files must be in English
+- All commit messages should be in English
+
+## Code Style
+- Use descriptive English names for variables and functions
+- Write clear English comments for complex logic
+- Use English for all console.log messages and debugging output
+- Error messages and alerts should be in English
+
+## Examples of what NOT to do:
+❌ const nomeUsuario = "João"
+❌ function criarPergunta() {}
+❌ // Esta função calcula o hash
+❌ alert("Erro ao processar")
+
+## Examples of what TO do:
+✅ const userName = "John"
+✅ function createQuestion() {}
+✅ // This function calculates the hash
+✅ alert("Error processing request")

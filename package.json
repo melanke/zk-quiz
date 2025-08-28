@@ -13,6 +13,7 @@
     "account:import": "yarn foundry:account-import",
     "account:reveal-pk": "yarn workspace @se-2/foundry account:reveal-pk",
     "chain": "yarn foundry:chain",
+    "zokrates:compile": "yarn workspace @se-2/foundry zokrates:compile",
     "compile": "yarn foundry:compile",
     "deploy": "yarn foundry:deploy",
     "flatten": "yarn foundry:flatten",
