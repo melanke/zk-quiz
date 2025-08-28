@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, ArrowLeft, CheckCircle, Info, Loader2 } from "lucide-react";
 import { useAccount } from "wagmi";
+import { Alert, AlertDescription } from "~~/components/ui/alert";
+import { Button } from "~~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
+import { Input } from "~~/components/ui/input";
+import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { hasQuestionStored, markQuestionSubmitted, saveQuestion } from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
@@ -130,43 +136,38 @@ export default function CreateQuestionPage() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       {/* Navigation */}
       <div className="mb-6">
-        <Link href="/quiz" className="btn btn-ghost btn-sm">
-          ← Back to quiz
-        </Link>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/quiz">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to quiz
+          </Link>
+        </Button>
       </div>
 
       {/* Form Card */}
-      <div className="card bg-base-100 shadow-lg">
-        <div className="card-body">
-          <h1 className="card-title text-2xl mb-6">Create New Question</h1>
-
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Create New Question</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-6">
             {/* Question Input */}
-            <div>
-              <label className="label">
-                <span className="label-text font-medium">Question</span>
-                <span className="label-text-alt">Variable length</span>
-              </label>
-              <textarea
-                className="textarea textarea-bordered w-full"
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Question</label>
+              <Textarea
                 placeholder="Enter your question here..."
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
                 rows={3}
               />
-              <div className="label">
-                <span className="label-text-alt">{question.length} characters</span>
-              </div>
+              <div className="text-xs text-muted-foreground">{question.length} characters</div>
             </div>
 
             {/* Answer Input */}
-            <div>
-              <label className="label">
-                <span className="label-text font-medium">Answer</span>
-              </label>
-              <input
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Answer</label>
+              <Input
                 type="text"
-                className="input input-bordered w-full"
                 placeholder="Enter the correct answer..."
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
@@ -175,127 +176,101 @@ export default function CreateQuestionPage() {
 
             {/* Calculate Hash Button */}
             <div>
-              <button
-                className="btn btn-outline w-full"
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={handleCalculateHash}
                 disabled={!answer.trim() || isCalculating}
               >
                 {isCalculating ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Calculating hash...
                   </>
                 ) : (
                   "Calculate Answer Hash"
                 )}
-              </button>
+              </Button>
             </div>
 
             {/* Hash Result */}
             {answerHash && (
               <div className="space-y-4">
-                <div className="alert alert-info">
-                  <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <div>
-                    <h3 className="font-bold">Calculated hash:</h3>
-                    <p className="text-xs break-all">{answerHash}</p>
-                  </div>
-                </div>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <div>
+                      <h3 className="font-bold">Calculated hash:</h3>
+                      <p className="text-xs break-all font-mono">{answerHash}</p>
+                    </div>
+                  </AlertDescription>
+                </Alert>
 
                 {/* Status Messages */}
                 {questionExists && (
-                  <div className="alert alert-warning">
-                    <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15.5c-.77.833.192 2.5 1.732 2.5z"
-                      ></path>
-                    </svg>
-                    <div>
-                      <h3 className="font-bold">Question already exists!</h3>
-                      <p>This answer has already been used in another question in the contract.</p>
-                      {alreadyStored && <p className="text-sm">✅ Saved in your localStorage.</p>}
-                    </div>
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div>
+                        <h3 className="font-bold">Question already exists!</h3>
+                        <p>This answer has already been used in another question in the contract.</p>
+                        {alreadyStored && <p className="text-sm">✅ Saved in your localStorage.</p>}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {!questionExists && alreadyStored && (
-                  <div className="alert alert-success">
-                    <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                    <div>
-                      <h3 className="font-bold">Valid question!</h3>
-                      <p>This question can be submitted to the contract.</p>
-                      <p className="text-sm">✅ Saved in your localStorage.</p>
-                    </div>
-                  </div>
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription>
+                      <div>
+                        <h3 className="font-bold text-green-800">Valid question!</h3>
+                        <p className="text-green-700">This question can be submitted to the contract.</p>
+                        <p className="text-sm text-green-600">✅ Saved in your localStorage.</p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {!questionExists && !alreadyStored && (
-                  <div className="alert alert-success">
-                    <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                    <div>
-                      <h3 className="font-bold">Valid question!</h3>
-                      <p>This question can be submitted to the contract.</p>
-                    </div>
-                  </div>
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription>
+                      <div>
+                        <h3 className="font-bold text-green-800">Valid question!</h3>
+                        <p className="text-green-700">This question can be submitted to the contract.</p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             )}
 
             {/* Submit Button */}
-            <div className="divider"></div>
-
-            <button className="btn btn-primary w-full" onClick={handleSubmitQuestion} disabled={!canSubmit}>
-              {isSubmitting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Submitting question...
-                </>
-              ) : (
-                "Submit Question to Contract"
-              )}
-            </button>
+            <div className="border-t pt-6">
+              <Button className="w-full" onClick={handleSubmitQuestion} disabled={!canSubmit}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting question...
+                  </>
+                ) : (
+                  "Submit Question to Contract"
+                )}
+              </Button>
+            </div>
 
             {/* Help Text */}
             {!address && (
-              <div className="alert alert-warning">
-                <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15.5c-.77.833.192 2.5 1.732 2.5z"
-                  ></path>
-                </svg>
-                <span>Connect your wallet to submit the question.</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>Connect your wallet to submit the question.</AlertDescription>
+              </Alert>
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

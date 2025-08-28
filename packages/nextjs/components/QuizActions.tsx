@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-// import { useRouter } from "next/navigation"; // Commented out as it's not being used
+import { Loader2 } from "lucide-react";
 import { useAccount } from "wagmi";
+import { Badge } from "~~/components/ui/badge";
+import { Button } from "~~/components/ui/button";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { getPendingCheckins, markAnswerSubmitted } from "~~/utils/localStorage";
 import { generateProof, strToBigInt } from "~~/utils/zk";
@@ -95,31 +97,31 @@ export const QuizActions = () => {
       {/* Pending checkins indicator */}
       {pendingCount > 0 && (
         <div className="flex items-center gap-2">
-          <div className="badge badge-error badge-sm">
+          <Badge variant="destructive" className="text-xs">
             {pendingCount} of {pendingCount} pending checkins
-          </div>
-          <button className="btn btn-primary btn-sm" onClick={handleSubmitCheckins} disabled={isSubmitting}>
+          </Badge>
+          <Button size="sm" onClick={handleSubmitCheckins} disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <span className="loading loading-spinner loading-xs"></span>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Submitting...
               </>
             ) : (
               "Submit Checkins"
             )}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Create question button */}
-      <Link href="/quiz/create" className="btn btn-outline btn-sm">
-        ✏️ Create Question
-      </Link>
+      <Button variant="outline" size="sm" asChild>
+        <Link href="/quiz/create">✏️ Create Question</Link>
+      </Button>
 
       {/* Quiz home button */}
-      <Link href="/quiz" className="btn btn-ghost btn-sm">
-        🎯 Quiz
-      </Link>
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/quiz">🎯 Quiz</Link>
+      </Button>
     </div>
   );
 };

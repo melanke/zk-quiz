@@ -1,6 +1,10 @@
-import { useRef } from "react";
+import { useState } from "react";
 import { rainbowkitBurnerWallet } from "burner-connector";
+import { EyeIcon } from "lucide-react";
 import { ShieldExclamationIcon } from "@heroicons/react/24/outline";
+import { Alert, AlertDescription } from "~~/components/ui/alert";
+import { Button } from "~~/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~~/components/ui/dialog";
 import { useCopyToClipboard } from "~~/hooks/scaffold-eth";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 
@@ -8,7 +12,7 @@ const BURNER_WALLET_PK_KEY = "burnerWallet.pk";
 
 export const RevealBurnerPKModal = () => {
   const { copyToClipboard, isCopiedToClipboard } = useCopyToClipboard();
-  const modalCheckboxRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleCopyPK = async () => {
     try {
@@ -20,40 +24,38 @@ export const RevealBurnerPKModal = () => {
     } catch (e) {
       const parsedError = getParsedError(e);
       notification.error(parsedError);
-      if (modalCheckboxRef.current) modalCheckboxRef.current.checked = false;
+      setIsOpen(false);
     }
   };
 
   return (
-    <>
-      <div>
-        <input type="checkbox" id="reveal-burner-pk-modal" className="modal-toggle" ref={modalCheckboxRef} />
-        <label htmlFor="reveal-burner-pk-modal" className="modal cursor-pointer">
-          <label className="modal-box relative">
-            {/* dummy input to capture event onclick on modal box */}
-            <input className="h-0 w-0 absolute top-0 left-0" />
-            <label htmlFor="reveal-burner-pk-modal" className="btn btn-ghost btn-sm btn-circle absolute right-3 top-3">
-              ✕
-            </label>
-            <div>
-              <p className="text-lg font-semibold m-0 p-0">Copy Burner Wallet Private Key</p>
-              <div role="alert" className="alert alert-warning mt-4">
-                <ShieldExclamationIcon className="h-6 w-6" />
-                <span className="font-semibold">
-                  Burner wallets are intended for local development only and are not safe for storing real funds.
-                </span>
-              </div>
-              <p>
-                Your Private Key provides <strong>full access</strong> to your entire wallet and funds. This is
-                currently stored <strong>temporarily</strong> in your browser.
-              </p>
-              <button className="btn btn-outline btn-error" onClick={handleCopyPK} disabled={isCopiedToClipboard}>
-                Copy Private Key To Clipboard
-              </button>
-            </div>
-          </label>
-        </label>
-      </div>
-    </>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm text-red-600">
+          <EyeIcon className="h-4 w-4" />
+          <span>Reveal Private Key</span>
+        </div>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Copy Burner Wallet Private Key</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <ShieldExclamationIcon className="h-4 w-4" />
+            <AlertDescription className="font-semibold">
+              Burner wallets are intended for local development only and are not safe for storing real funds.
+            </AlertDescription>
+          </Alert>
+          <p className="text-sm text-muted-foreground">
+            Your Private Key provides <strong>full access</strong> to your entire wallet and funds. This is currently
+            stored <strong>temporarily</strong> in your browser.
+          </p>
+          <Button variant="destructive" onClick={handleCopyPK} disabled={isCopiedToClipboard} className="w-full">
+            Copy Private Key To Clipboard
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

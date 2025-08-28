@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     YourContract: {
-      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
+      address: "0x45009dd3abbe29db54fc5d893ceaa98a624882df",
       abi: [
         {
           type: "constructor",
@@ -148,7 +148,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 19,
+      deployedOnBlock: 25,
     },
     Verifier: {
       address: "0x82dc47734901ee7d4f4232f398752cb9dd5daccc",
@@ -235,7 +235,7 @@ const deployedContracts = {
       deployedOnBlock: 8,
     },
     Quiz: {
-      address: "0x067c804bb006836469379d4a2a69a81803bd1f45",
+      address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2",
       abi: [
         {
           type: "constructor",
@@ -670,10 +670,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 20,
+      deployedOnBlock: 26,
     },
     AnswerVerifier: {
-      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9",
+      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
       abi: [
         {
           type: "function",
@@ -754,7 +754,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 20,
+      deployedOnBlock: 26,
     },
   },
 } as const;

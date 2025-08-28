@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { hardhat } from "viem/chains";
-import { Bars3Icon, BugAntIcon } from "@heroicons/react/24/outline";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import { QuizActions } from "~~/components/QuizActions";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { Button } from "~~/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "~~/components/ui/sheet";
+import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { cn } from "~~/lib/utils";
 
 type HeaderMenuLink = {
   label: string;
@@ -22,46 +24,32 @@ export const menuLinks: HeaderMenuLink[] = [
     label: "Home",
     href: "/",
   },
-  {
-    label: "ZK Test",
-    href: "/zk-test",
-    icon: <span className="text-lg">🔒</span>,
-  },
-  {
-    label: "Ponder",
-    href: "/ponder-greetings",
-    icon: <MagnifyingGlassIcon className="h-4 w-4" />,
-  },
-  {
-    label: "Debug Contracts",
-    href: "/debug",
-    icon: <BugAntIcon className="h-4 w-4" />,
-  },
 ];
 
-export const HeaderMenuLinks = () => {
+export const HeaderMenuLinks = ({ className }: { className?: string }) => {
   const pathname = usePathname();
 
   return (
-    <>
+    <div className={cn("flex flex-col lg:flex-row lg:items-center gap-2", className)}>
       {menuLinks.map(({ label, href, icon }) => {
         const isActive = pathname === href;
         return (
-          <li key={href}>
-            <Link
-              href={href}
-              passHref
-              className={`${
-                isActive ? "bg-secondary shadow-md" : ""
-              } hover:bg-secondary hover:shadow-md focus:!bg-secondary active:!text-neutral py-1.5 px-3 text-sm rounded-full gap-2 grid grid-flow-col`}
-            >
-              {icon}
-              <span>{label}</span>
-            </Link>
-          </li>
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors",
+              isActive
+                ? "bg-secondary text-secondary-foreground"
+                : "hover:bg-secondary/80 hover:text-secondary-foreground",
+            )}
+          >
+            {icon}
+            <span>{label}</span>
+          </Link>
         );
       })}
-    </>
+    </div>
   );
 };
 
@@ -71,46 +59,62 @@ export const HeaderMenuLinks = () => {
 export const Header = () => {
   const { targetNetwork } = useTargetNetwork();
   const isLocalNetwork = targetNetwork.id === hardhat.id;
-
-  const burgerMenuRef = useRef<HTMLDetailsElement>(null);
-  useOutsideClick(burgerMenuRef, () => {
-    burgerMenuRef?.current?.removeAttribute("open");
-  });
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="sticky lg:static top-0 navbar bg-base-100 min-h-0 shrink-0 justify-between z-20 shadow-md shadow-secondary px-0 sm:px-2">
-      <div className="navbar-start w-auto lg:w-1/2">
-        <details className="dropdown" ref={burgerMenuRef}>
-          <summary className="ml-1 btn btn-ghost lg:hidden hover:bg-transparent">
-            <Bars3Icon className="h-1/2" />
-          </summary>
-          <ul
-            className="menu menu-compact dropdown-content mt-3 p-2 shadow-sm bg-base-100 rounded-box w-52"
-            onClick={() => {
-              burgerMenuRef?.current?.removeAttribute("open");
-            }}
-          >
-            <HeaderMenuLinks />
-          </ul>
-        </details>
-        <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
-          <div className="flex relative w-10 h-10">
-            <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
+    <header className="sticky lg:static top-0 z-20 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center px-4">
+        <div className="mr-4 hidden md:flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <div className="relative h-8 w-8">
+              <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm">Scaffold-ETH</span>
+              <span className="text-xs text-muted-foreground">Ethereum dev stack</span>
+            </div>
+          </Link>
+        </div>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <Bars3Icon className="h-6 w-6" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0">
+            <Link href="/" className="flex items-center space-x-2" onClick={() => setIsOpen(false)}>
+              <div className="relative h-8 w-8">
+                <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-sm">Scaffold-ETH</span>
+                <span className="text-xs text-muted-foreground">Ethereum dev stack</span>
+              </div>
+            </Link>
+            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+              <div onClick={() => setIsOpen(false)}>
+                <HeaderMenuLinks className="flex-col items-start space-x-0 space-y-1" />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <div className="hidden md:flex">
+              <HeaderMenuLinks />
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold leading-tight">Scaffold-ETH</span>
-            <span className="text-xs">Ethereum dev stack</span>
-          </div>
-        </Link>
-        <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
-          <HeaderMenuLinks />
-        </ul>
+          <nav className="flex items-center gap-2">
+            <QuizActions />
+            <RainbowKitCustomConnectButton />
+            {isLocalNetwork && <FaucetButton />}
+          </nav>
+        </div>
       </div>
-      <div className="navbar-end grow mr-4 flex items-center gap-2">
-        <QuizActions />
-        <RainbowKitCustomConnectButton />
-        {isLocalNetwork && <FaucetButton />}
-      </div>
-    </div>
+    </header>
   );
 };

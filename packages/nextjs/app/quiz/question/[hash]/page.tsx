@@ -3,7 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ArrowLeft, CheckCircle, ChevronDown, Loader2, X } from "lucide-react";
 import { Address } from "~~/components/scaffold-eth";
+import { Alert, AlertDescription } from "~~/components/ui/alert";
+import { Avatar, AvatarFallback } from "~~/components/ui/avatar";
+import { Badge } from "~~/components/ui/badge";
+import { Button } from "~~/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~~/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~~/components/ui/dropdown-menu";
+import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { hasAnswered, saveAnswer } from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
@@ -109,7 +122,7 @@ export default function QuestionPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="loading loading-spinner loading-lg"></div>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
           <p className="mt-2">Loading question...</p>
         </div>
       </div>
@@ -120,40 +133,34 @@ export default function QuestionPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Navigation */}
       <div className="mb-6">
-        <Link href="/quiz" className="btn btn-ghost btn-sm">
-          ← Back to list
-        </Link>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/quiz">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to list
+          </Link>
+        </Button>
       </div>
 
       {/* Question Card */}
-      <div className="card bg-base-100 shadow-lg mb-8">
-        <div className="card-body">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="card-title text-2xl">{questionText}</h1>
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-2xl">{questionText}</CardTitle>
             {isAnswered && (
-              <div className="badge badge-success gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+              <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+                <CheckCircle className="w-4 h-4 mr-1" />
                 Answered
-              </div>
+              </Badge>
             )}
           </div>
-
-          <p className="text-sm text-base-content/60 mb-6">Question hash: {questHash}</p>
-
+          <CardDescription>Question hash: {questHash}</CardDescription>
+        </CardHeader>
+        <CardContent>
           {/* Answer Form */}
           <div className="space-y-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Your answer:</span>
-              </label>
-              <textarea
-                className="textarea textarea-bordered w-full"
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Your answer:</label>
+              <Textarea
                 placeholder="Enter your answer here..."
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
@@ -162,66 +169,50 @@ export default function QuestionPage() {
               />
             </div>
 
-            <button className="btn btn-primary" onClick={handleVerifyAnswer} disabled={isVerifying || !answer.trim()}>
+            <Button onClick={handleVerifyAnswer} disabled={isVerifying || !answer.trim()}>
               {isVerifying ? (
                 <>
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Verifying...
                 </>
               ) : (
                 "Verify Answer"
               )}
-            </button>
+            </Button>
 
             {/* Verification Result */}
             {verificationResult && (
-              <div className={`alert ${verificationResult.success ? "alert-success" : "alert-error"}`}>
-                <svg className="stroke-current shrink-0 w-6 h-6" fill="none" viewBox="0 0 24 24">
-                  {verificationResult.success ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  )}
-                </svg>
-                <span>{verificationResult.message}</span>
-              </div>
+              <Alert variant={verificationResult.success ? "default" : "destructive"}>
+                {verificationResult.success ? <CheckCircle className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                <AlertDescription>{verificationResult.message}</AlertDescription>
+              </Alert>
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Check-ins List */}
-      <div className="card bg-base-100 shadow-lg">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="card-title">Who answered this question</h2>
-            <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="btn btn-outline btn-sm">
-                Sort by date {sortOrder === "desc" ? "↓" : "↑"}
-              </div>
-              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                <li>
-                  <a onClick={() => setSortOrder("desc")}>Most recent first</a>
-                </li>
-                <li>
-                  <a onClick={() => setSortOrder("asc")}>Oldest first</a>
-                </li>
-              </ul>
-            </div>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Who answered this question</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Sort by date {sortOrder === "desc" ? "↓" : "↑"}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSortOrder("desc")}>Most recent first</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder("asc")}>Oldest first</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
+        </CardHeader>
+        <CardContent>
           {getSortedCheckIns().length === 0 ? (
-            <div className="text-center py-8 text-base-content/60">
+            <div className="text-center py-8 text-muted-foreground">
               <div className="text-4xl mb-2">🤷‍♂️</div>
               <p>Nobody has answered this question yet.</p>
               <p className="text-sm mt-1">Be the first!</p>
@@ -231,17 +222,15 @@ export default function QuestionPage() {
               {getSortedCheckIns().map((checkIn, index) => (
                 <div
                   key={`${checkIn.user}-${checkIn.blockNumber}`}
-                  className="flex items-center justify-between p-3 border border-base-300 rounded-lg"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="avatar placeholder">
-                      <div className="bg-neutral text-neutral-content rounded-full w-10">
-                        <span className="text-xs">{index + 1}</span>
-                      </div>
-                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="text-xs">{index + 1}</AvatarFallback>
+                    </Avatar>
                     <div>
                       <Address address={checkIn.user} />
-                      <p className="text-sm text-base-content/60">
+                      <p className="text-sm text-muted-foreground">
                         Block #{checkIn.blockNumber}
                         {checkIn.timestamp && (
                           <span className="ml-2">• {new Date(checkIn.timestamp * 1000).toLocaleString()}</span>
@@ -249,15 +238,15 @@ export default function QuestionPage() {
                       </p>
                     </div>
                   </div>
-                  <Link href={`/quiz/profile/${checkIn.user}`} className="btn btn-ghost btn-xs">
-                    View profile
-                  </Link>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/quiz/profile/${checkIn.user}`}>View profile</Link>
+                  </Button>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

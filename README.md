@@ -3,8 +3,8 @@
 Allows creating questions with a hidden response that can be safely answered without compromising it's secret.
 
 - User A inputs the question and response, which will be hashed using poseidon and stored on the contract;
-- User B can answer and test if it matches locally. Then they can create a proof they know the answer attached to their address and submit to the contract, which will validate and save the "check-in" in the contract.
-- No one will be to know discover the answer because it's hidden within the proof.
+- User B can answer and test if it matches locally. Then they can create a proof they know the answer bond to their address and submit to the contract, which will validate and save the "check-in" in the contract.
+- No one will be able to discover the answer because it's hidden within the proof.
 - No one will be able to replicate the request because the proof is bond to User B's address.
 
 ## Requirements
@@ -22,7 +22,7 @@ To get started, follow the steps below:
 1. Install dependencies if it was skipped in CLI:
 
 ```
-cd my-zk-quiz
+cd zk-quiz
 yarn install
 ```
 
@@ -53,11 +53,9 @@ Visit the app on: `http://localhost:3000`.
 ## Known issues to be fixed:
 
 ### General Styling
-- layout: it's using default SE template, we should use something more similar to shadcn default style
 - header: The home page should be /quiz/
 - Remove the ZK Test page
 - Replace alerts for toasts on the whole app
-- The textarea rounded borders are strange (present in /quiz/create and other pages)
 
 ### /quiz
 - The title doesn't have contrast

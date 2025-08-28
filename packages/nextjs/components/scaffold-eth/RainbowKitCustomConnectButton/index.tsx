@@ -3,11 +3,10 @@
 // @refresh reset
 import { Balance } from "../Balance";
 import { AddressInfoDropdown } from "./AddressInfoDropdown";
-import { AddressQRCodeModal } from "./AddressQRCodeModal";
-import { RevealBurnerPKModal } from "./RevealBurnerPKModal";
 import { WrongNetworkDropdown } from "./WrongNetworkDropdown";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Address } from "viem";
+import { Button } from "~~/components/ui/button";
 import { useNetworkColor } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
@@ -32,9 +31,9 @@ export const RainbowKitCustomConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button className="btn btn-primary btn-sm" onClick={openConnectModal} type="button">
+                  <Button size="sm" onClick={openConnectModal} type="button">
                     Connect Wallet
-                  </button>
+                  </Button>
                 );
               }
 
@@ -56,8 +55,6 @@ export const RainbowKitCustomConnectButton = () => {
                     ensAvatar={account.ensAvatar}
                     blockExplorerAddressLink={blockExplorerAddressLink}
                   />
-                  <AddressQRCodeModal address={account.address as Address} modalId="qrcode-modal" />
-                  <RevealBurnerPKModal />
                 </>
               );
             })()}
