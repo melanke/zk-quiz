@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
@@ -113,16 +112,6 @@ export const QuizActions = () => {
           </Button>
         </div>
       )}
-
-      {/* Create question button */}
-      <Button variant="outline" size="sm" asChild>
-        <Link href="/quiz/create">✏️ Create Question</Link>
-      </Button>
-
-      {/* Quiz home button */}
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/quiz">🎯 Quiz</Link>
-      </Button>
     </div>
   );
 };

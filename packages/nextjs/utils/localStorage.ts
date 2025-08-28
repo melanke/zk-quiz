@@ -72,6 +72,15 @@ export function hasAnswered(answerHash: string): boolean {
 }
 
 /**
+ * Get saved answer for a specific question
+ */
+export function getSavedAnswer(answerHash: string): string | null {
+  const answers = getStoredAnswers();
+  const answer = answers.find(a => a.answerHash === answerHash);
+  return answer ? answer.answer : null;
+}
+
+/**
  * Mark answer as submitted to contract
  */
 export function markAnswerSubmitted(answerHash: string, blockNumber: number): void {

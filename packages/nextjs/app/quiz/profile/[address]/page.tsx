@@ -47,6 +47,7 @@ export default function ProfilePage() {
   const answeredQuestions: ProfileEvent[] = (checkInEvents || []).map(event => ({
     type: "answered",
     answerHash: event.args.answerHash?.toString() || "",
+    question: event.args.question || "",
     blockNumber: Number(event.args.blockNumber || 0),
     timestamp: (event as any).blockTimestamp || 0,
     transactionHash: event.transactionHash || "",
@@ -169,7 +170,7 @@ function AnsweredQuestionCard({ event }: QuestionCardProps) {
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mb-2">Hash: {event.answerHash.slice(0, 20)}...</p>
+          {event.question && <h3 className="font-medium mb-2">{event.question}</h3>}
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/quiz/question/${event.answerHash}`}>View question</Link>
@@ -194,7 +195,6 @@ function CreatedQuestionCard({ event }: QuestionCardProps) {
             )}
           </div>
           {event.question && <h3 className="font-medium mb-2">{event.question}</h3>}
-          <p className="text-sm text-muted-foreground mb-2">Hash: {event.answerHash.slice(0, 20)}...</p>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/quiz/question/${event.answerHash}`}>View question</Link>

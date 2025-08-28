@@ -18,7 +18,7 @@ import {
 } from "~~/components/ui/dropdown-menu";
 import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { hasAnswered, saveAnswer } from "~~/utils/localStorage";
+import { getSavedAnswer, hasAnswered, saveAnswer } from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
 
 interface CheckInEvent {
@@ -34,6 +34,7 @@ export default function QuestionPage() {
 
   const [answer, setAnswer] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -56,48 +57,82 @@ export default function QuestionPage() {
   // questionText is now directly a string from the contract
 
   useEffect(() => {
-    setIsAnswered(hasAnswered(questHash));
-  }, [questHash]);
+    const answered = hasAnswered(questHash);
+    setIsAnswered(answered);
 
-  const handleVerifyAnswer = async () => {
-    if (!answer.trim()) {
-      setVerificationResult({ success: false, message: "Please enter an answer." });
-      return;
-    }
-
-    setIsVerifying(true);
-    setVerificationResult(null);
-
-    try {
-      // Convert answer to BigInt and hash it
-      const answerBigInt = strToBigInt(answer.trim());
-      const hashedAnswer = await poseidonHashBigInt(answerBigInt);
-
-      // Check if the hash matches the quest hash
-      if (hashedAnswer.toString() === questHash) {
-        // Save to localStorage
-        saveAnswer(questHash, questionText || "", answer.trim());
-        setIsAnswered(true);
+    // If already answered, load the saved answer
+    if (answered) {
+      const savedAnswer = getSavedAnswer(questHash);
+      if (savedAnswer) {
+        setAnswer(savedAnswer);
         setVerificationResult({
           success: true,
           message: "Correct answer! Saved to localStorage. You can submit it to the contract later.",
         });
-      } else {
+      }
+    }
+  }, [questHash]);
+
+  // Auto-verify answer with debounce when answer changes
+  useEffect(() => {
+    // Don't verify if already answered
+    if (isAnswered) {
+      return;
+    }
+
+    // Show "Checking..." immediately when user types
+    if (answer.trim()) {
+      setIsChecking(true);
+      setVerificationResult(null);
+    } else {
+      setIsChecking(false);
+      setVerificationResult(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      if (!answer.trim()) {
+        setIsChecking(false);
+        setVerificationResult(null);
+        return;
+      }
+
+      setIsVerifying(true);
+
+      try {
+        // Convert answer to BigInt and hash it
+        const answerBigInt = strToBigInt(answer.trim());
+        const hashedAnswer = await poseidonHashBigInt(answerBigInt);
+
+        // Check if the hash matches the quest hash
+        if (hashedAnswer.toString() === questHash) {
+          // Save to localStorage
+          saveAnswer(questHash, questionText || "", answer.trim());
+          setIsAnswered(true);
+          setVerificationResult({
+            success: true,
+            message: "Correct answer! Saved to localStorage. You can submit it to the contract later.",
+          });
+        } else {
+          setVerificationResult({
+            success: false,
+            message: "Incorrect answer. Please try again.",
+          });
+        }
+      } catch (error) {
+        console.error("Error verifying answer:", error);
         setVerificationResult({
           success: false,
-          message: "Incorrect answer. Please try again.",
+          message: "Error verifying the answer. Please try again.",
         });
+      } finally {
+        setIsVerifying(false);
+        setIsChecking(false);
       }
-    } catch (error) {
-      console.error("Error verifying answer:", error);
-      setVerificationResult({
-        success: false,
-        message: "Error verifying the answer. Please try again.",
-      });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [answer, questHash, questionText, isAnswered]);
 
   const getSortedCheckIns = (): CheckInEvent[] => {
     if (!checkInEvents) return [];
@@ -153,7 +188,7 @@ export default function QuestionPage() {
               </Badge>
             )}
           </div>
-          <CardDescription>Question hash: {questHash}</CardDescription>
+          <CardDescription>Do you know the answer?</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Answer Form */}
@@ -164,21 +199,16 @@ export default function QuestionPage() {
                 placeholder="Enter your answer here..."
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
-                disabled={isVerifying}
+                disabled={isVerifying || isAnswered}
                 rows={3}
               />
-            </div>
-
-            <Button onClick={handleVerifyAnswer} disabled={isVerifying || !answer.trim()}>
-              {isVerifying ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                "Verify Answer"
+              {isChecking && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Checking...
+                </div>
               )}
-            </Button>
+            </div>
 
             {/* Verification Result */}
             {verificationResult && (

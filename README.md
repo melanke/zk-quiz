@@ -53,20 +53,15 @@ Visit the app on: `http://localhost:3000`.
 ## Known issues to be fixed:
 
 ### /quiz/question
-- Don't show the hash
-- Remove the button "Verify Answer", check if true as you type with a debounce
 - Show questions that depends on it
 - When answering a question that depends on other, only allow answering if you got that first right, and show an input for the previous answer that will be pré-filled with the answer it got from the localstorage
-
-### /quiz/profile
-- On the questions card it shouldn't show the hash and on "Questions Answered" it's not showing the Question text
 
 ### ???
 - Both on question card and question details page the "Answered" badge should be different if the question is not submitted yet, maybe it should show "Pending"
 - Both on the "Who answered this question" card and the user profile page, we should fix the avatar using the one from ENS. And the address should be shown without a duplicated avatar.
 
 ### Submitting Checkins
-- Instead of a button on the header, let's have a persistent panel on the botton corner that shows all pending questions and a checkbox on each (marked as default) to signal if you want to submit that question; Fix the sending mechanism to send all questions in the same transaction or change the contract to accept multiple.
+- Instead of a button on the header, let's have a persistent panel on the botton corner that shows all pending questions; Fix the sending mechanism to send all questions in the same transaction or change the contract to accept multiple.
 
 ### Hashtags and Mentions
 - Use Ponder to index hashtags and mentions

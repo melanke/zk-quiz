@@ -104,7 +104,7 @@ export default function QuizHome() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
+              <div className="flex justify-center items-center gap-2 mb-8">
                 <Button
                   variant="outline"
                   size="sm"
@@ -128,6 +128,14 @@ export default function QuizHome() {
                 </Button>
               </div>
             )}
+
+            {/* Create Question Button */}
+            <div className="text-center">
+              <Button asChild size="lg">
+                <Link href="/quiz/create">Create New Question</Link>
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2">Share your knowledge with the community</p>
+            </div>
           </>
         )}
       </div>

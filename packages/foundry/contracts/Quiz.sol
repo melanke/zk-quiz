@@ -63,7 +63,7 @@ contract Quiz {
     // ------------------------------
 
     event QuestCreated(uint256 indexed answerHash, address indexed creator, string question, uint256 dependency);
-    event CheckedIn(address indexed user, uint256 indexed answerHash, uint256 blockNumber);
+    event CheckedIn(address indexed user, uint256 indexed answerHash, string question, uint256 blockNumber);
 
     // ------------------------------
     // Constructor
@@ -217,7 +217,7 @@ contract Quiz {
         uint256 current = answerHash;
         while (current != 0 && checkIn[current][msg.sender] == 0) {
             checkIn[current][msg.sender] = block.number;
-            emit CheckedIn(msg.sender, current, block.number);
+            emit CheckedIn(msg.sender, current, questQuestions[current], block.number);
             current = questDependency[current];
         }
     }

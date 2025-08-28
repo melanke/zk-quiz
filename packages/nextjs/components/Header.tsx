@@ -24,13 +24,17 @@ export const menuLinks: HeaderMenuLink[] = [
     label: "Home",
     href: "/",
   },
+  {
+    label: "Create Question",
+    href: "/quiz/create",
+  },
 ];
 
 export const HeaderMenuLinks = ({ className }: { className?: string }) => {
   const pathname = usePathname();
 
   return (
-    <div className={cn("flex flex-col lg:flex-row lg:items-center gap-2", className)}>
+    <div className={cn("flex flex-col md:flex-row lg:items-center gap-2", className)}>
       {menuLinks.map(({ label, href, icon }) => {
         const isActive = pathname === href;
         return (
@@ -98,11 +102,9 @@ export const Header = () => {
             </div>
           </SheetContent>
         </Sheet>
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <div className="hidden md:flex">
-              <HeaderMenuLinks />
-            </div>
+        <div className="flex flex-1 items-center justify-between">
+          <div className="hidden md:flex">
+            <HeaderMenuLinks />
           </div>
           <nav className="flex items-center gap-2">
             <QuizActions />
