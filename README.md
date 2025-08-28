@@ -52,14 +52,6 @@ Visit the app on: `http://localhost:3000`.
 
 ## Known issues to be fixed:
 
-### /quiz
-- The title doesn't have contrast
-- Remove the ID from the card
-
-### /quiz/create
-- We don't need that "Variable length" text
-- Remove "Calculate Answer Hash" button and the two cards below it, the hash should be calculated and checked for duplicates as you type with a debounce. And we should only receive a message if it finds duplicates
-
 ### /quiz/question
 - Don't show the hash
 - Remove the button "Verify Answer", check if true as you type with a debounce

@@ -154,7 +154,7 @@ function QuestionCard({ questHash, isAnswered }: QuestionCardProps) {
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <CardTitle className="text-lg">{questionText || "Loading question..."}</CardTitle>
-              <CardDescription className="mt-1">ID: {questHash.slice(0, 10)}...</CardDescription>
+              <CardDescription className="mt-1">Do you know the answer?</CardDescription>
             </div>
 
             {isAnswered && (

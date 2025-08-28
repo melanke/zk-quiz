@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CheckCircle, Info, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
@@ -24,6 +24,7 @@ export default function CreateQuestionPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answerHash, setAnswerHash] = useState<string>("");
   const [questionExists, setQuestionExists] = useState(false);
@@ -43,37 +44,57 @@ export default function CreateQuestionPage() {
     },
   });
 
-  const handleCalculateHash = async () => {
-    if (!answer.trim()) {
-      toast.error("Please enter an answer.");
+  // Auto-calculate hash with debounce when answer changes
+  useEffect(() => {
+    // Show "Checking..." immediately when user types
+    if (answer.trim()) {
+      setIsChecking(true);
+    } else {
+      setIsChecking(false);
+      setAnswerHash("");
+      setQuestionExists(false);
+      setAlreadyStored(false);
       return;
     }
 
-    setIsCalculating(true);
+    const timeoutId = setTimeout(async () => {
+      if (!answer.trim()) {
+        setIsChecking(false);
+        setAnswerHash("");
+        setQuestionExists(false);
+        setAlreadyStored(false);
+        return;
+      }
 
-    try {
-      // Convert answer to BigInt and hash it
-      const answerBigInt = strToBigInt(answer.trim());
-      const hashedAnswer = await poseidonHashBigInt(answerBigInt);
-      const hashString = hashedAnswer.toString();
+      setIsCalculating(true);
 
-      setAnswerHash(hashString);
+      try {
+        // Convert answer to BigInt and hash it
+        const answerBigInt = strToBigInt(answer.trim());
+        const hashedAnswer = await poseidonHashBigInt(answerBigInt);
+        const hashString = hashedAnswer.toString();
 
-      // Check if already stored locally
-      const stored = hasQuestionStored(hashString);
-      setAlreadyStored(stored);
+        setAnswerHash(hashString);
 
-      // The useScaffoldReadContract will automatically check if it exists in contract
-    } catch (error) {
-      console.error("Error calculating hash:", error);
-      toast.error("Error calculating answer hash.");
-    } finally {
-      setIsCalculating(false);
-    }
-  };
+        // Check if already stored locally
+        const stored = hasQuestionStored(hashString);
+        setAlreadyStored(stored);
+
+        // The useScaffoldReadContract will automatically check if it exists in contract
+      } catch (error) {
+        console.error("Error calculating hash:", error);
+        toast.error("Error calculating answer hash.");
+      } finally {
+        setIsCalculating(false);
+        setIsChecking(false);
+      }
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [answer]);
 
   // Check if question exists in contract when answerHash changes
-  useState(() => {
+  useEffect(() => {
     if (existingQuestion) {
       setQuestionExists(true);
       // If exists and not stored locally, save it
@@ -84,7 +105,7 @@ export default function CreateQuestionPage() {
     } else {
       setQuestionExists(false);
     }
-  });
+  }, [existingQuestion, alreadyStored, question, answer, answerHash]);
 
   const handleSubmitQuestion = async () => {
     if (!address) {
@@ -98,7 +119,7 @@ export default function CreateQuestionPage() {
     }
 
     if (!answerHash) {
-      toast.error("Please calculate the hash first.");
+      toast.error("Please wait for hash calculation to complete.");
       return;
     }
 
@@ -131,7 +152,15 @@ export default function CreateQuestionPage() {
     }
   };
 
-  const canSubmit = answerHash && !questionExists && question.trim() && answer.trim() && !isSubmitting;
+  const canSubmit =
+    answerHash &&
+    !questionExists &&
+    question.trim() &&
+    answer.trim() &&
+    answer.length <= 15 &&
+    !isSubmitting &&
+    !isCalculating &&
+    !isChecking;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -173,79 +202,30 @@ export default function CreateQuestionPage() {
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
               />
-            </div>
-
-            {/* Calculate Hash Button */}
-            <div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleCalculateHash}
-                disabled={!answer.trim() || isCalculating}
-              >
-                {isCalculating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Calculating hash...
-                  </>
-                ) : (
-                  "Calculate Answer Hash"
-                )}
-              </Button>
-            </div>
-
-            {/* Hash Result */}
-            {answerHash && (
-              <div className="space-y-4">
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <div>
-                      <h3 className="font-bold">Calculated hash:</h3>
-                      <p className="text-xs break-all font-mono">{answerHash}</p>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-
-                {/* Status Messages */}
-                {questionExists && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div>
-                        <h3 className="font-bold">Question already exists!</h3>
-                        <p>This answer has already been used in another question in the contract.</p>
-                        {alreadyStored && <p className="text-sm">✅ Saved in your localStorage.</p>}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {!questionExists && alreadyStored && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription>
-                      <div>
-                        <h3 className="font-bold text-green-800">Valid question!</h3>
-                        <p className="text-green-700">This question can be submitted to the contract.</p>
-                        <p className="text-sm text-green-600">✅ Saved in your localStorage.</p>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {!questionExists && !alreadyStored && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription>
-                      <div>
-                        <h3 className="font-bold text-green-800">Valid question!</h3>
-                        <p className="text-green-700">This question can be submitted to the contract.</p>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
+              <div className="flex justify-between items-center">
+                <div className={`text-xs ${answer.length > 15 ? "text-red-500" : "text-muted-foreground"}`}>
+                  {answer.length}/15 characters
+                </div>
+                {isChecking && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Checking...
+                  </div>
                 )}
               </div>
+            </div>
+
+            {/* Error Alert for Duplicates */}
+            {questionExists && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <div>
+                    <h3 className="font-bold">Question already exists!</h3>
+                    <p>This answer has already been used in another question in the contract.</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Submit Button */}
