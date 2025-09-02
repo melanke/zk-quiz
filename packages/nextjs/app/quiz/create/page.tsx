@@ -77,7 +77,7 @@ export default function CreateQuestionPage() {
         setAnswerHash(hashString);
 
         // Check if already stored locally
-        const stored = hasQuestionStored(hashString);
+        const stored = address ? hasQuestionStored(hashString, address) : false;
         setAlreadyStored(stored);
 
         // The useScaffoldReadContract will automatically check if it exists in contract
@@ -91,21 +91,21 @@ export default function CreateQuestionPage() {
     }, 1000); // 1s debounce
 
     return () => clearTimeout(timeoutId);
-  }, [answer]);
+  }, [answer, address]);
 
   // Check if question exists in contract when answerHash changes
   useEffect(() => {
     if (existingQuestion) {
       setQuestionExists(true);
       // If exists and not stored locally, save it
-      if (!alreadyStored && question && answer) {
-        saveQuestion(answerHash, question, answer);
+      if (!alreadyStored && question && answer && address) {
+        saveQuestion(answerHash, question, answer, address);
         setAlreadyStored(true);
       }
     } else {
       setQuestionExists(false);
     }
-  }, [existingQuestion, alreadyStored, question, answer, answerHash]);
+  }, [existingQuestion, alreadyStored, question, answer, answerHash, address]);
 
   const handleSubmitQuestion = async () => {
     if (!address) {
@@ -139,8 +139,8 @@ export default function CreateQuestionPage() {
       });
 
       // Save to localStorage
-      saveQuestion(answerHash, question.trim(), answer.trim());
-      markQuestionSubmitted(answerHash);
+      saveQuestion(answerHash, question.trim(), answer.trim(), address);
+      markQuestionSubmitted(answerHash, address);
 
       toast.success("Question created successfully!");
       router.push("/quiz");

@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAccount } from "wagmi";
+import { AnsweredBadge } from "~~/components/quiz/AnsweredBadge";
 import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~~/components/ui/card";
@@ -47,16 +48,16 @@ export default function QuizHome() {
 
   // Load answered questions from localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && connectedAddress) {
       const answered = new Set<string>();
       rootQuests?.forEach(questHash => {
-        if (hasAnswered(questHash.toString())) {
+        if (hasAnswered(questHash.toString(), connectedAddress)) {
           answered.add(questHash.toString());
         }
       });
       setAnsweredQuestions(answered);
     }
-  }, [rootQuests]);
+  }, [rootQuests, connectedAddress]);
 
   const totalPages = totalRootQuests ? Math.ceil(Number(totalRootQuests) / pageSize) : 0;
 
@@ -148,7 +149,7 @@ interface QuestionCardProps {
   isAnswered: boolean;
 }
 
-function QuestionCard({ questHash, isAnswered }: QuestionCardProps) {
+function QuestionCard({ questHash }: QuestionCardProps) {
   const { data: questionText } = useScaffoldReadContract({
     contractName: "Quiz",
     functionName: "questQuestions",
@@ -165,12 +166,7 @@ function QuestionCard({ questHash, isAnswered }: QuestionCardProps) {
               <CardDescription className="mt-1">Do you know the answer?</CardDescription>
             </div>
 
-            {isAnswered && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">Answered</span>
-              </div>
-            )}
+            <AnsweredBadge questHash={questHash} />
           </div>
         </CardHeader>
         <CardFooter className="pt-0">

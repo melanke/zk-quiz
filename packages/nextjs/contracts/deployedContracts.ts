@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     YourContract: {
-      address: "0x8ce361602b935680e8dec218b820ff5056beb7af",
+      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
       abi: [
         {
           type: "constructor",
@@ -148,10 +148,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 11,
+      deployedOnBlock: 1,
     },
     AnswerVerifier: {
-      address: "0xe1aa25618fa0c7a1cfdab5d6b456af611873b629",
+      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
       abi: [
         {
           type: "function",
@@ -232,10 +232,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 12,
+      deployedOnBlock: 2,
     },
     Quiz: {
-      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
       abi: [
         {
           type: "constructor",
@@ -507,6 +507,25 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "multicall",
+          inputs: [
+            {
+              name: "data",
+              type: "bytes[]",
+              internalType: "bytes[]",
+            },
+          ],
+          outputs: [
+            {
+              name: "results",
+              type: "bytes[]",
+              internalType: "bytes[]",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "questDependency",
           inputs: [
             {
@@ -674,9 +693,25 @@ const deployedContracts = {
           ],
           anonymous: false,
         },
+        {
+          type: "error",
+          name: "AddressEmptyCode",
+          inputs: [
+            {
+              name: "target",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "FailedCall",
+          inputs: [],
+        },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 13,
+      deployedOnBlock: 2,
     },
   },
 } as const;

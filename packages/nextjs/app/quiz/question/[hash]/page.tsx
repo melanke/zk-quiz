@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, ChevronDown, Loader2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle, ChevronDown, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { useAccount } from "wagmi";
+import { AnsweredBadge } from "~~/components/quiz/AnsweredBadge";
 import { Address } from "~~/components/scaffold-eth";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
-import { Avatar, AvatarFallback } from "~~/components/ui/avatar";
-import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~~/components/ui/card";
 import {
@@ -31,6 +31,7 @@ interface CheckInEvent {
 export default function QuestionPage() {
   const params = useParams();
   const questHash = params.hash as string;
+  const { address } = useAccount();
 
   const [answer, setAnswer] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -38,6 +39,7 @@ export default function QuestionPage() {
   const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showAnswer, setShowAnswer] = useState(false);
 
   // Get question data
   const { data: questionText } = useScaffoldReadContract({
@@ -57,12 +59,19 @@ export default function QuestionPage() {
   // questionText is now directly a string from the contract
 
   useEffect(() => {
-    const answered = hasAnswered(questHash);
+    if (!address) {
+      setIsAnswered(false);
+      setAnswer("");
+      setVerificationResult(null);
+      return;
+    }
+
+    const answered = hasAnswered(questHash, address);
     setIsAnswered(answered);
 
     // If already answered, load the saved answer
     if (answered) {
-      const savedAnswer = getSavedAnswer(questHash);
+      const savedAnswer = getSavedAnswer(questHash, address);
       if (savedAnswer) {
         setAnswer(savedAnswer);
         setVerificationResult({
@@ -71,12 +80,12 @@ export default function QuestionPage() {
         });
       }
     }
-  }, [questHash]);
+  }, [questHash, address]);
 
   // Auto-verify answer with debounce when answer changes
   useEffect(() => {
-    // Don't verify if already answered
-    if (isAnswered) {
+    // Don't verify if already answered or no address
+    if (isAnswered || !address) {
       return;
     }
 
@@ -107,7 +116,7 @@ export default function QuestionPage() {
         // Check if the hash matches the quest hash
         if (hashedAnswer.toString() === questHash) {
           // Save to localStorage
-          saveAnswer(questHash, questionText || "", answer.trim());
+          saveAnswer(questHash, questionText || "", answer.trim(), address);
           setIsAnswered(true);
           setVerificationResult({
             success: true,
@@ -132,7 +141,7 @@ export default function QuestionPage() {
     }, 1000); // 1s debounce
 
     return () => clearTimeout(timeoutId);
-  }, [answer, questHash, questionText, isAnswered]);
+  }, [answer, questHash, questionText, isAnswered, address]);
 
   const getSortedCheckIns = (): CheckInEvent[] => {
     if (!checkInEvents) return [];
@@ -181,12 +190,7 @@ export default function QuestionPage() {
         <CardHeader>
           <div className="flex justify-between items-start">
             <CardTitle className="text-2xl">{questionText}</CardTitle>
-            {isAnswered && (
-              <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Answered
-              </Badge>
-            )}
+            <AnsweredBadge questHash={questHash} />
           </div>
           <CardDescription>Do you know the answer?</CardDescription>
         </CardHeader>
@@ -195,13 +199,26 @@ export default function QuestionPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Your answer:</label>
-              <Textarea
-                placeholder="Enter your answer here..."
-                value={answer}
-                onChange={e => setAnswer(e.target.value)}
-                disabled={isVerifying || isAnswered}
-                rows={3}
-              />
+              <div className="relative">
+                <Textarea
+                  placeholder="Enter your answer here..."
+                  value={isAnswered && !showAnswer ? "•".repeat(answer.length) : answer}
+                  onChange={e => setAnswer(e.target.value)}
+                  disabled={isVerifying || isAnswered}
+                  rows={3}
+                />
+                {isAnswered && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2 h-8 w-8 p-0"
+                    onClick={() => setShowAnswer(!showAnswer)}
+                  >
+                    {showAnswer ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                )}
+              </div>
               {isChecking && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Loader2 className="mr-2 h-3 w-3 animate-spin" />
@@ -249,23 +266,20 @@ export default function QuestionPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {getSortedCheckIns().map((checkIn, index) => (
+              {getSortedCheckIns().map(checkIn => (
                 <div
                   key={`${checkIn.user}-${checkIn.blockNumber}`}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="text-xs">{index + 1}</AvatarFallback>
-                    </Avatar>
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <Address address={checkIn.user} />
-                      <p className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground">
                         Block #{checkIn.blockNumber}
                         {checkIn.timestamp && (
                           <span className="ml-2">• {new Date(checkIn.timestamp * 1000).toLocaleString()}</span>
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" asChild>

@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { encodeFunctionData } from "viem";
 import { useAccount } from "wagmi";
-import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { cn } from "~~/lib/utils";
 import { getPendingCheckins, markAnswerSubmitted } from "~~/utils/localStorage";
 import { generateProof, strToBigInt } from "~~/utils/zk";
 
-export const QuizActions = () => {
+export const QuizActions = ({ className }: { className?: string }) => {
   const { address } = useAccount();
   // const router = useRouter(); // Commented out as it's not being used
   const [pendingCount, setPendingCount] = useState(0);
@@ -20,10 +21,19 @@ export const QuizActions = () => {
     contractName: "Quiz",
   });
 
+  // Get the Quiz contract instance with full ABI
+  const { data: quizContract } = useScaffoldContract({
+    contractName: "Quiz",
+  });
+
   // Update pending count
   useEffect(() => {
     const updatePendingCount = () => {
-      const pending = getPendingCheckins();
+      if (!address) {
+        setPendingCount(0);
+        return;
+      }
+      const pending = getPendingCheckins(address);
       setPendingCount(pending.length);
     };
 
@@ -32,7 +42,7 @@ export const QuizActions = () => {
     // Update every 2 seconds to catch localStorage changes
     const interval = setInterval(updatePendingCount, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [address]);
 
   const handleSubmitCheckins = async () => {
     if (!address) {
@@ -40,49 +50,65 @@ export const QuizActions = () => {
       return;
     }
 
-    const pendingCheckins = getPendingCheckins();
+    if (!quizContract) {
+      toast.error("Contract not loaded yet. Please try again in a moment.");
+      return;
+    }
+
+    const pendingCheckins = getPendingCheckins(address);
     if (pendingCheckins.length === 0) {
-      toast.warning("No pending check-ins.");
+      toast.warning("No pending answers.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Submit each check-in individually for now
-      // In a real implementation, you might want to batch these
-      for (const checkin of pendingCheckins) {
-        try {
-          const answerBigInt = strToBigInt(checkin.answer);
-          const userAddressBigInt = BigInt(address);
+      // Generate proofs for all pending check-ins
+      const proofPromises = pendingCheckins.map(async checkin => {
+        const answerBigInt = strToBigInt(checkin.answer);
+        const userAddressBigInt = BigInt(address);
+        const args = [answerBigInt.toString(), userAddressBigInt.toString(), checkin.answerHash];
 
-          const args = [answerBigInt.toString(), userAddressBigInt.toString(), checkin.answerHash];
+        const proof = await generateProof<3>("AnswerVerifier", args);
+        return {
+          checkin,
+          proof: proof.proof,
+          inputs: proof.inputs,
+        };
+      });
 
-          const proof = await generateProof<3>("AnswerVerifier", args);
+      console.log("Generating proofs for all answers...");
+      const proofsData = await Promise.all(proofPromises);
 
-          // Submit to contract
-          await writeQuestGraph({
-            functionName: "checkInQuest",
-            args: [proof.proof, proof?.inputs],
-          });
+      // Encode all the checkInQuest calls for multicall using the contract's ABI
+      const encodedCalls = proofsData.map(({ proof, inputs }) =>
+        encodeFunctionData({
+          abi: quizContract?.abi || [],
+          functionName: "checkInQuest",
+          args: [proof, inputs],
+        }),
+      );
 
-          // Mark as submitted in localStorage
-          // Note: In production, you'd wait for the transaction to be confirmed
-          // and get the actual block number
-          markAnswerSubmitted(checkin.answerHash, 0);
+      // Submit all check-ins in a single multicall transaction
+      console.log(`Submitting ${encodedCalls.length} answers in a single transaction...`);
 
-          console.log(`Check-in submitted for question ${checkin.answerHash.slice(0, 10)}...`);
+      await writeQuestGraph({
+        functionName: "multicall",
+        args: [encodedCalls],
+      });
 
-          toast.success(`${pendingCheckins.length} check-ins submitted successfully!`);
-          setPendingCount(0);
-        } catch (error) {
-          console.error(`Error submitting check-in for ${checkin.answerHash}:`, error);
-          // Don't break the loop, continue with other check-ins
-        }
-      }
+      // Mark all as submitted in localStorage
+      proofsData.forEach(({ checkin }) => {
+        markAnswerSubmitted(checkin.answerHash, 0, address);
+      });
+
+      console.log(`${pendingCheckins.length} answers submitted successfully in batch!`);
+      toast.success(`${pendingCheckins.length} answers submitted successfully!`);
+      setPendingCount(0);
     } catch (error) {
-      console.error("Error submitting check-ins:", error);
-      toast.error("Error submitting check-ins. Please try again.");
+      console.error("Error submitting answers:", error);
+      toast.error("Error submitting answers. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,13 +119,11 @@ export const QuizActions = () => {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", className)}>
       {/* Pending checkins indicator */}
       {pendingCount > 0 && (
         <div className="flex items-center gap-2">
-          <Badge variant="destructive" className="text-xs">
-            {pendingCount} of {pendingCount} pending checkins
-          </Badge>
+          <div className="text-xs">{pendingCount} pending answers</div>
           <Button size="sm" onClick={handleSubmitCheckins} disabled={isSubmitting}>
             {isSubmitting ? (
               <>
@@ -107,7 +131,7 @@ export const QuizActions = () => {
                 Submitting...
               </>
             ) : (
-              "Submit Checkins"
+              "Submit Answers"
             )}
           </Button>
         </div>

@@ -16,17 +16,31 @@ export interface StoredQuestion {
   submitted?: boolean;
 }
 
-const ANSWERS_KEY = "quiz_answers";
-const QUESTIONS_KEY = "quiz_questions";
+const ANSWERS_KEY_PREFIX = "quiz_answers_";
+const QUESTIONS_KEY_PREFIX = "quiz_questions_";
 
 /**
- * Get all stored answers from localStorage
+ * Get localStorage key for answers for a specific address
  */
-export function getStoredAnswers(): StoredAnswer[] {
-  if (typeof window === "undefined") return [];
+function getAnswersKey(address: string): string {
+  return `${ANSWERS_KEY_PREFIX}${address.toLowerCase()}`;
+}
+
+/**
+ * Get localStorage key for questions for a specific address
+ */
+function getQuestionsKey(address: string): string {
+  return `${QUESTIONS_KEY_PREFIX}${address.toLowerCase()}`;
+}
+
+/**
+ * Get all stored answers from localStorage for a specific address
+ */
+export function getStoredAnswers(address?: string): StoredAnswer[] {
+  if (typeof window === "undefined" || !address) return [];
 
   try {
-    const stored = localStorage.getItem(ANSWERS_KEY);
+    const stored = localStorage.getItem(getAnswersKey(address));
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error("Error reading stored answers:", error);
@@ -35,13 +49,13 @@ export function getStoredAnswers(): StoredAnswer[] {
 }
 
 /**
- * Save an answer to localStorage
+ * Save an answer to localStorage for a specific address
  */
-export function saveAnswer(answerHash: string, question: string, answer: string): void {
-  if (typeof window === "undefined") return;
+export function saveAnswer(answerHash: string, question: string, answer: string, address: string): void {
+  if (typeof window === "undefined" || !address) return;
 
   try {
-    const answers = getStoredAnswers();
+    const answers = getStoredAnswers(address);
     const existingIndex = answers.findIndex(a => a.answerHash === answerHash);
 
     const newAnswer: StoredAnswer = {
@@ -57,7 +71,7 @@ export function saveAnswer(answerHash: string, question: string, answer: string)
       answers.push(newAnswer);
     }
 
-    localStorage.setItem(ANSWERS_KEY, JSON.stringify(answers));
+    localStorage.setItem(getAnswersKey(address), JSON.stringify(answers));
   } catch (error) {
     console.error("Error saving answer:", error);
   }
@@ -66,16 +80,38 @@ export function saveAnswer(answerHash: string, question: string, answer: string)
 /**
  * Check if user has answered a specific question
  */
-export function hasAnswered(answerHash: string): boolean {
-  const answers = getStoredAnswers();
+export function hasAnswered(answerHash: string, address: string): boolean {
+  const answers = getStoredAnswers(address);
   return answers.some(a => a.answerHash === answerHash);
+}
+
+/**
+ * Get answer status for a specific question
+ * @returns "not_answered" | "pending_submission" | "submitted"
+ */
+export function getAnswerStatus(
+  answerHash: string,
+  address: string,
+): "not_answered" | "pending_submission" | "submitted" {
+  const answers = getStoredAnswers(address);
+  const answer = answers.find(a => a.answerHash === answerHash);
+
+  if (!answer) {
+    return "not_answered";
+  }
+
+  if (answer.submittedToContract) {
+    return "submitted";
+  }
+
+  return "pending_submission";
 }
 
 /**
  * Get saved answer for a specific question
  */
-export function getSavedAnswer(answerHash: string): string | null {
-  const answers = getStoredAnswers();
+export function getSavedAnswer(answerHash: string, address: string): string | null {
+  const answers = getStoredAnswers(address);
   const answer = answers.find(a => a.answerHash === answerHash);
   return answer ? answer.answer : null;
 }
@@ -83,17 +119,17 @@ export function getSavedAnswer(answerHash: string): string | null {
 /**
  * Mark answer as submitted to contract
  */
-export function markAnswerSubmitted(answerHash: string, blockNumber: number): void {
-  if (typeof window === "undefined") return;
+export function markAnswerSubmitted(answerHash: string, blockNumber: number, address: string): void {
+  if (typeof window === "undefined" || !address) return;
 
   try {
-    const answers = getStoredAnswers();
+    const answers = getStoredAnswers(address);
     const answerIndex = answers.findIndex(a => a.answerHash === answerHash);
 
     if (answerIndex >= 0) {
       answers[answerIndex].submittedToContract = true;
       answers[answerIndex].blockNumber = blockNumber;
-      localStorage.setItem(ANSWERS_KEY, JSON.stringify(answers));
+      localStorage.setItem(getAnswersKey(address), JSON.stringify(answers));
     }
   } catch (error) {
     console.error("Error marking answer as submitted:", error);
@@ -103,18 +139,18 @@ export function markAnswerSubmitted(answerHash: string, blockNumber: number): vo
 /**
  * Get pending checkins (answers not submitted to contract)
  */
-export function getPendingCheckins(): StoredAnswer[] {
-  return getStoredAnswers().filter(a => !a.submittedToContract);
+export function getPendingCheckins(address: string): StoredAnswer[] {
+  return getStoredAnswers(address).filter(a => !a.submittedToContract);
 }
 
 /**
- * Get all stored questions from localStorage
+ * Get all stored questions from localStorage for a specific address
  */
-export function getStoredQuestions(): StoredQuestion[] {
-  if (typeof window === "undefined") return [];
+export function getStoredQuestions(address: string): StoredQuestion[] {
+  if (typeof window === "undefined" || !address) return [];
 
   try {
-    const stored = localStorage.getItem(QUESTIONS_KEY);
+    const stored = localStorage.getItem(getQuestionsKey(address));
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error("Error reading stored questions:", error);
@@ -123,13 +159,13 @@ export function getStoredQuestions(): StoredQuestion[] {
 }
 
 /**
- * Save a question to localStorage
+ * Save a question to localStorage for a specific address
  */
-export function saveQuestion(answerHash: string, question: string, answer: string): void {
-  if (typeof window === "undefined") return;
+export function saveQuestion(answerHash: string, question: string, answer: string, address: string): void {
+  if (typeof window === "undefined" || !address) return;
 
   try {
-    const questions = getStoredQuestions();
+    const questions = getStoredQuestions(address);
     const existingIndex = questions.findIndex(q => q.answerHash === answerHash);
 
     const newQuestion: StoredQuestion = {
@@ -145,7 +181,7 @@ export function saveQuestion(answerHash: string, question: string, answer: strin
       questions.push(newQuestion);
     }
 
-    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(questions));
+    localStorage.setItem(getQuestionsKey(address), JSON.stringify(questions));
   } catch (error) {
     console.error("Error saving question:", error);
   }
@@ -154,16 +190,16 @@ export function saveQuestion(answerHash: string, question: string, answer: strin
 /**
  * Mark question as submitted to contract
  */
-export function markQuestionSubmitted(answerHash: string): void {
-  if (typeof window === "undefined") return;
+export function markQuestionSubmitted(answerHash: string, address: string): void {
+  if (typeof window === "undefined" || !address) return;
 
   try {
-    const questions = getStoredQuestions();
+    const questions = getStoredQuestions(address);
     const questionIndex = questions.findIndex(q => q.answerHash === answerHash);
 
     if (questionIndex >= 0) {
       questions[questionIndex].submitted = true;
-      localStorage.setItem(QUESTIONS_KEY, JSON.stringify(questions));
+      localStorage.setItem(getQuestionsKey(address), JSON.stringify(questions));
     }
   } catch (error) {
     console.error("Error marking question as submitted:", error);
@@ -173,7 +209,7 @@ export function markQuestionSubmitted(answerHash: string): void {
 /**
  * Check if user has this question stored locally
  */
-export function hasQuestionStored(answerHash: string): boolean {
-  const questions = getStoredQuestions();
+export function hasQuestionStored(answerHash: string, address: string): boolean {
+  const questions = getStoredQuestions(address);
   return questions.some(q => q.answerHash === answerHash);
 }

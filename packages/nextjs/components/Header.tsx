@@ -67,7 +67,7 @@ export const Header = () => {
 
   return (
     <header className="sticky lg:static top-0 z-20 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center px-4">
+      <div className="container mx-auto flex h-14 items-center px-4">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Logo className="h-8 w-8 cursor-pointer text-foreground" />
@@ -96,8 +96,9 @@ export const Header = () => {
               </div>
             </Link>
             <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-              <div onClick={() => setIsOpen(false)}>
+              <div className="h-full flex flex-col items-start justify-between" onClick={() => setIsOpen(false)}>
                 <HeaderMenuLinks className="flex-col items-start space-x-0 space-y-1" />
+                <QuizActions />
               </div>
             </div>
           </SheetContent>
@@ -106,8 +107,8 @@ export const Header = () => {
           <div className="hidden md:flex">
             <HeaderMenuLinks />
           </div>
+          <QuizActions className="hidden md:flex" />
           <nav className="flex items-center gap-2">
-            <QuizActions />
             <RainbowKitCustomConnectButton />
             {isLocalNetwork && <FaucetButton />}
           </nav>

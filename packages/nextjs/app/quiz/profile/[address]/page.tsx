@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { AnsweredBadge } from "~~/components/quiz/AnsweredBadge";
 import { Address } from "~~/components/scaffold-eth";
-import { Avatar, AvatarFallback } from "~~/components/ui/avatar";
 import { Badge } from "~~/components/ui/badge";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
@@ -80,14 +80,9 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <Card className="mb-8">
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-xl">👤</AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-2xl">User Profile</CardTitle>
-              <Address address={userAddress} />
-            </div>
+          <div className="flex flex-col gap-2">
+            <CardTitle className="text-lg">User Profile</CardTitle>
+            <Address address={userAddress} size="3xl" />
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
@@ -160,9 +155,7 @@ function AnsweredQuestionCard({ event }: QuestionCardProps) {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
-              Answered
-            </Badge>
+            <AnsweredBadge questHash={event.answerHash} forceStatus="submitted" variant="outline" fontSize="xs" />
             <span className="text-sm text-muted-foreground">Block #{event.blockNumber}</span>
             {event.timestamp && (
               <span className="text-sm text-muted-foreground">
