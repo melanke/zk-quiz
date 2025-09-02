@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card"
 import { Input } from "~~/components/ui/input";
 import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { hasQuestionStored, markQuestionSubmitted, saveQuestion } from "~~/utils/localStorage";
+import { createDependentAnswer, hasQuestionStored, markQuestionSubmitted, saveQuestion } from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
 
 // Removed stringToBytes32 function as questions are now stored as strings
@@ -20,6 +20,8 @@ import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
 export default function CreateQuestionPage() {
   const { address } = useAccount();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const dependencyHash = searchParams.get("dependency");
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -29,6 +31,7 @@ export default function CreateQuestionPage() {
   const [answerHash, setAnswerHash] = useState<string>("");
   const [questionExists, setQuestionExists] = useState(false);
   const [alreadyStored, setAlreadyStored] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const { writeContractAsync: write } = useScaffoldWriteContract({
     contractName: "Quiz",
@@ -41,6 +44,16 @@ export default function CreateQuestionPage() {
     args: [BigInt(answerHash)],
     query: {
       enabled: !!answerHash,
+    },
+  });
+
+  // Get dependency question if creating a dependent question
+  const { data: dependencyQuestion } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "questQuestions",
+    args: [BigInt(dependencyHash || "0")],
+    query: {
+      enabled: !!dependencyHash,
     },
   });
 
@@ -69,8 +82,26 @@ export default function CreateQuestionPage() {
       setIsCalculating(true);
 
       try {
-        // Convert answer to BigInt and hash it
-        const answerBigInt = strToBigInt(answer.trim());
+        let finalAnswer = answer.trim();
+
+        // If this is a dependent question, concatenate with dependency answer
+        if (dependencyHash) {
+          try {
+            finalAnswer = createDependentAnswer(dependencyHash, answer.trim(), address || "");
+          } catch (error) {
+            console.error("CREATE: Error creating dependent answer:", error);
+            setVerificationResult({
+              success: false,
+              message: "You must answer the dependency question first before creating a dependent question.",
+            });
+            setIsCalculating(false);
+            setIsChecking(false);
+            return;
+          }
+        }
+
+        // Convert final answer to BigInt and hash it
+        const answerBigInt = strToBigInt(finalAnswer);
         const hashedAnswer = await poseidonHashBigInt(answerBigInt);
         const hashString = hashedAnswer.toString();
 
@@ -91,7 +122,7 @@ export default function CreateQuestionPage() {
     }, 1000); // 1s debounce
 
     return () => clearTimeout(timeoutId);
-  }, [answer, address]);
+  }, [answer, address, dependencyHash]);
 
   // Check if question exists in contract when answerHash changes
   useEffect(() => {
@@ -131,11 +162,12 @@ export default function CreateQuestionPage() {
     setIsSubmitting(true);
 
     try {
-      // Submit to contract (dependency = 0 for root quest)
-      // Question is now passed as string directly
+      // Submit to contract
+      // Use dependencyHash if provided, otherwise 0 for root quest
+      const dependency = dependencyHash ? BigInt(dependencyHash) : 0n;
       await write({
         functionName: "createQuest",
-        args: [question.trim(), BigInt(answerHash), 0n],
+        args: [question.trim(), BigInt(answerHash), dependency],
       });
 
       // Save to localStorage
@@ -177,9 +209,28 @@ export default function CreateQuestionPage() {
       {/* Form Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Create New Question</CardTitle>
+          <CardTitle className="text-2xl">
+            {dependencyHash ? "Create Dependent Question" : "Create New Question"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Dependency Info */}
+          {dependencyHash && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-blue-600">🔗</span>
+                <h3 className="font-semibold text-blue-700 dark:text-blue-300">Creating Dependent Question</h3>
+              </div>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">This question will depend on:</p>
+              <div className="bg-white dark:bg-gray-800 p-3 rounded border">
+                <p className="font-medium">{dependencyQuestion || "Loading dependency..."}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Your answer will be automatically concatenated with the dependency answer when submitted.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-6">
             {/* Question Input */}
             <div className="space-y-2">
@@ -214,6 +265,14 @@ export default function CreateQuestionPage() {
                 )}
               </div>
             </div>
+
+            {/* Verification Result */}
+            {verificationResult && (
+              <Alert variant={verificationResult.success ? "default" : "destructive"}>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{verificationResult.message}</AlertDescription>
+              </Alert>
+            )}
 
             {/* Error Alert for Duplicates */}
             {questionExists && (

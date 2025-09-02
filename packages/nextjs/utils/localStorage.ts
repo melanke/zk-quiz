@@ -213,3 +213,28 @@ export function hasQuestionStored(answerHash: string, address: string): boolean 
   const questions = getStoredQuestions(address);
   return questions.some(q => q.answerHash === answerHash);
 }
+
+/**
+ * Get the direct dependency answer for a given question
+ * This is used to concatenate answers for dependent questions
+ */
+export function getDependencyAnswer(answerHash: string, address: string): string | null {
+  const answers = getStoredAnswers(address);
+  const answer = answers.find(a => a.answerHash === answerHash);
+  return answer ? answer.answer : null;
+}
+
+/**
+ * Create concatenated answer for dependent questions
+ * @param dependencyHash - Hash of the dependency question
+ * @param newAnswer - New answer to concatenate
+ * @param address - User address
+ * @returns Concatenated answer (dependencyAnswer + newAnswer)
+ */
+export function createDependentAnswer(dependencyHash: string, newAnswer: string, address: string): string {
+  const dependencyAnswer = getDependencyAnswer(dependencyHash, address);
+  if (!dependencyAnswer) {
+    throw new Error("Dependency answer not found. You must answer the dependency question first.");
+  }
+  return dependencyAnswer + newAnswer;
+}

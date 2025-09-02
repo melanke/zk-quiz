@@ -8,7 +8,7 @@ import { useAccount } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useScaffoldContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { cn } from "~~/lib/utils";
-import { getPendingCheckins, markAnswerSubmitted } from "~~/utils/localStorage";
+import { createDependentAnswer, getPendingCheckins, markAnswerSubmitted } from "~~/utils/localStorage";
 import { generateProof, strToBigInt } from "~~/utils/zk";
 
 export const QuizActions = ({ className }: { className?: string }) => {
@@ -25,6 +25,19 @@ export const QuizActions = ({ className }: { className?: string }) => {
   const { data: quizContract } = useScaffoldContract({
     contractName: "Quiz",
   });
+
+  // Helper function to get dependency for a question
+  const getDependencyForQuestion = async (answerHash: string): Promise<string | null> => {
+    try {
+      if (!quizContract) return null;
+
+      const dependency = await quizContract.read.questDependency([BigInt(answerHash)]);
+      return dependency && dependency.toString() !== "0" ? dependency.toString() : null;
+    } catch (error) {
+      console.error("Error getting dependency:", error);
+      return null;
+    }
+  };
 
   // Update pending count
   useEffect(() => {
@@ -66,7 +79,22 @@ export const QuizActions = ({ className }: { className?: string }) => {
     try {
       // Generate proofs for all pending check-ins
       const proofPromises = pendingCheckins.map(async checkin => {
-        const answerBigInt = strToBigInt(checkin.answer);
+        // Check if this question has a dependency and get the correct final answer
+        let finalAnswer = checkin.answer;
+
+        const dependency = await getDependencyForQuestion(checkin.answerHash);
+        if (dependency) {
+          try {
+            // This is a dependent question, concatenate answers
+            finalAnswer = createDependentAnswer(dependency, checkin.answer, address);
+            console.log(`SUBMISSION: Dependent answer for ${checkin.answerHash}: ${finalAnswer}`);
+          } catch (error) {
+            console.error("Error creating dependent answer for submission:", error);
+            // If we can't concatenate, use the original answer
+          }
+        }
+
+        const answerBigInt = strToBigInt(finalAnswer);
         const userAddressBigInt = BigInt(address);
         const args = [answerBigInt.toString(), userAddressBigInt.toString(), checkin.answerHash];
 

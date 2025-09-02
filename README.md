@@ -52,9 +52,5 @@ Visit the app on: `http://localhost:3000`.
 
 ## Known issues to be fixed:
 
-### /quiz/question
-- Show questions that depends on it
-- When answering a question that depends on other, only allow answering if you got that first right, and show an input for the previous answer that will be pré-filled with the answer it got from the localstorage
-
 ### Hashtags and Mentions
 - Use Ponder to index hashtags and mentions

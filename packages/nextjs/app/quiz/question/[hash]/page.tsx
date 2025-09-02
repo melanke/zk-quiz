@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, ChevronDown, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle, ChevronDown, Eye, EyeOff, Loader2, Plus, X } from "lucide-react";
 import { useAccount } from "wagmi";
 import { AnsweredBadge } from "~~/components/quiz/AnsweredBadge";
 import { Address } from "~~/components/scaffold-eth";
@@ -18,7 +18,7 @@ import {
 } from "~~/components/ui/dropdown-menu";
 import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { getSavedAnswer, hasAnswered, saveAnswer } from "~~/utils/localStorage";
+import { createDependentAnswer, getSavedAnswer, hasAnswered, saveAnswer } from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
 
 interface CheckInEvent {
@@ -46,6 +46,27 @@ export default function QuestionPage() {
     contractName: "Quiz",
     functionName: "questQuestions",
     args: [BigInt(questHash)],
+  });
+
+  // Get quest dependency
+  const { data: questDependency } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "questDependency",
+    args: [BigInt(questHash)],
+  });
+
+  // Get dependent questions count
+  const { data: childrenCount } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "childrenCount",
+    args: [BigInt(questHash)],
+  });
+
+  // Get dependent questions list
+  const { data: dependentQuests } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "listQuestsByDependency",
+    args: [BigInt(questHash), 0n, 50n], // Get first 50 dependent questions
   });
 
   // Get check-in events for this question
@@ -82,10 +103,24 @@ export default function QuestionPage() {
     }
   }, [questHash, address]);
 
+  // Helper function to check if there's a valid dependency
+  const hasDependency =
+    questDependency !== undefined &&
+    questDependency !== null &&
+    questDependency !== 0n &&
+    questDependency.toString() !== "0";
+
+  // Check if dependency is answered (if it exists)
+  const isDependencyAnswered = hasDependency
+    ? address
+      ? hasAnswered(questDependency.toString(), address)
+      : false
+    : true; // If no dependency, consider it "answered"
+
   // Auto-verify answer with debounce when answer changes
   useEffect(() => {
-    // Don't verify if already answered or no address
-    if (isAnswered || !address) {
+    // Don't verify if already answered, no address, or dependency not answered
+    if (isAnswered || !address || !isDependencyAnswered) {
       return;
     }
 
@@ -109,18 +144,38 @@ export default function QuestionPage() {
       setIsVerifying(true);
 
       try {
-        // Convert answer to BigInt and hash it
-        const answerBigInt = strToBigInt(answer.trim());
+        let finalAnswer = answer.trim();
+
+        // If this question has a dependency, concatenate answers
+        if (hasDependency) {
+          try {
+            finalAnswer = createDependentAnswer(questDependency.toString(), answer.trim(), address);
+          } catch (error) {
+            console.error("Error creating dependent answer:", error);
+            setVerificationResult({
+              success: false,
+              message: "You must answer the dependency question first before answering this one.",
+            });
+            setIsVerifying(false);
+            setIsChecking(false);
+            return;
+          }
+        }
+
+        // Convert final answer to BigInt and hash it
+        const answerBigInt = strToBigInt(finalAnswer);
         const hashedAnswer = await poseidonHashBigInt(answerBigInt);
 
         // Check if the hash matches the quest hash
         if (hashedAnswer.toString() === questHash) {
-          // Save to localStorage
+          // Save to localStorage (save the user's part of the answer, not the concatenated version)
           saveAnswer(questHash, questionText || "", answer.trim(), address);
           setIsAnswered(true);
           setVerificationResult({
             success: true,
-            message: "Correct answer! Saved to localStorage. You can submit it to the contract later.",
+            message: hasDependency
+              ? "Correct answer! Your answer was concatenated with the dependency. Saved to localStorage."
+              : "Correct answer! Saved to localStorage. You can submit it to the contract later.",
           });
         } else {
           setVerificationResult({
@@ -141,7 +196,7 @@ export default function QuestionPage() {
     }, 1000); // 1s debounce
 
     return () => clearTimeout(timeoutId);
-  }, [answer, questHash, questionText, isAnswered, address]);
+  }, [answer, questHash, questionText, isAnswered, address, hasDependency, isDependencyAnswered, questDependency]);
 
   const getSortedCheckIns = (): CheckInEvent[] => {
     if (!checkInEvents) return [];
@@ -195,16 +250,21 @@ export default function QuestionPage() {
           <CardDescription>Do you know the answer?</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Show dependency info if this question has a dependency */}
+          {hasDependency && <DependencyInfo dependencyHash={questDependency.toString()} />}
+
           {/* Answer Form */}
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Your answer:</label>
               <div className="relative">
                 <Textarea
-                  placeholder="Enter your answer here..."
+                  placeholder={
+                    !isDependencyAnswered ? "Answer the dependency question first..." : "Enter your answer here..."
+                  }
                   value={isAnswered && !showAnswer ? "•".repeat(answer.length) : answer}
                   onChange={e => setAnswer(e.target.value)}
-                  disabled={isVerifying || isAnswered}
+                  disabled={isVerifying || isAnswered || !isDependencyAnswered}
                   rows={3}
                 />
                 {isAnswered && (
@@ -235,6 +295,56 @@ export default function QuestionPage() {
               </Alert>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Dependent Questions List */}
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Dependent Questions ({childrenCount ? childrenCount.toString() : "0"})</CardTitle>
+              <CardDescription>Questions that build upon this one</CardDescription>
+            </div>
+            {isAnswered && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/quiz/create?dependency=${questHash}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Question
+                </Link>
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!isAnswered ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="text-4xl mb-2">🔒</div>
+              {childrenCount && childrenCount.toString() !== "0" ? (
+                <div>
+                  <p>Answer this question first to see dependent questions.</p>
+                  <p className="text-sm mt-1">There are {childrenCount.toString()} dependent questions waiting.</p>
+                </div>
+              ) : (
+                <div>
+                  <p>No dependent questions yet.</p>
+                  <p className="text-sm mt-1">Answer this question and be the first to create one!</p>
+                </div>
+              )}
+            </div>
+          ) : dependentQuests && dependentQuests.length > 0 ? (
+            <div className="space-y-3">
+              {dependentQuests.map(depHash => (
+                <DependentQuestionCard key={depHash.toString()} questionHash={depHash.toString()} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="text-4xl mb-2">📝</div>
+              <p>No dependent questions yet.</p>
+              <p className="text-sm mt-1">Be the first to create one!</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -291,6 +401,89 @@ export default function QuestionPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Component to show dependency information
+function DependencyInfo({ dependencyHash }: { dependencyHash: string }) {
+  const { address } = useAccount();
+  const { data: dependencyQuestion } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "questQuestions",
+    args: [BigInt(dependencyHash)],
+  });
+
+  // Check if dependency has been answered
+  const isDependencyAnswered = address ? hasAnswered(dependencyHash, address) : false;
+
+  if (isDependencyAnswered) {
+    // Compact layout when dependency is already answered
+    return (
+      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600">🔗</span>
+            <span className="text-sm text-blue-600 dark:text-blue-400">
+              Depends on: <span className="font-medium">{dependencyQuestion || "Loading..."}</span>
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/quiz/question/${dependencyHash}`}>View</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Full layout when dependency is not answered
+  return (
+    <div className="mb-6 p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-orange-600">🔗</span>
+        <h3 className="font-semibold text-orange-700 dark:text-orange-300">Dependency Required</h3>
+      </div>
+      <p className="text-sm text-orange-600 dark:text-orange-400 mb-3">This question depends on:</p>
+      <div className="bg-white dark:bg-gray-800 p-3 rounded border">
+        <p className="font-medium">{dependencyQuestion || "Loading dependency..."}</p>
+        <div className="mt-2">
+          <p className="text-sm text-orange-600 dark:text-orange-400 mb-2">
+            ⚠️ You must answer this dependency question first.
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/quiz/question/${dependencyHash}`}>Answer dependency first</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component to show dependent question cards
+function DependentQuestionCard({ questionHash }: { questionHash: string }) {
+  const { data: questionText } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "questQuestions",
+    args: [BigInt(questionHash)],
+  });
+
+  return (
+    <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1">
+          <p className="font-medium mb-2">{questionText || "Loading question..."}</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="inline-flex items-center">
+              <span className="mr-1">🔗</span>
+              Depends on this question
+            </span>
+            <AnsweredBadge questHash={questionHash} />
+          </div>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/quiz/question/${questionHash}`}>View Question</Link>
+        </Button>
+      </div>
     </div>
   );
 }

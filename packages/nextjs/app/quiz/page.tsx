@@ -156,6 +156,15 @@ function QuestionCard({ questHash }: QuestionCardProps) {
     args: [BigInt(questHash)],
   });
 
+  // Get dependent questions count
+  const { data: childrenCount } = useScaffoldReadContract({
+    contractName: "Quiz",
+    functionName: "childrenCount",
+    args: [BigInt(questHash)],
+  });
+
+  const hasChildren = childrenCount && childrenCount.toString() !== "0";
+
   return (
     <Link href={`/quiz/question/${questHash}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
@@ -170,7 +179,15 @@ function QuestionCard({ questHash }: QuestionCardProps) {
           </div>
         </CardHeader>
         <CardFooter className="pt-0">
-          <Badge variant="outline">Root Question</Badge>
+          <div className="flex gap-2">
+            <Badge variant="outline">Root Question</Badge>
+            {hasChildren && (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                <span className="mr-1">📝</span>
+                {childrenCount?.toString()} dependent
+              </Badge>
+            )}
+          </div>
         </CardFooter>
       </Card>
     </Link>
