@@ -89,8 +89,10 @@ contract Quiz is Multicall {
     function createQuest(string memory question, uint256 answerHash, uint256 dependency) external {
         require(bytes(questQuestions[answerHash]).length == 0, "Quest already exists");
         if (dependency != 0) {
-            // Optional sanity check to ensure dependency exists
+            // Ensure dependency exists
             require(bytes(questQuestions[dependency]).length != 0, "Dependency does not exist");
+            // Ensure the creator has answered the dependency question
+            require(checkIn[dependency][msg.sender] != 0, "Must answer dependency question first");
         }
 
         questQuestions[answerHash] = question;
@@ -103,6 +105,10 @@ contract Quiz is Multicall {
         }
 
         emit QuestCreated(answerHash, msg.sender, question, dependency);
+
+        // Automatically mark the creator as having answered this question
+        checkIn[answerHash][msg.sender] = block.number;
+        emit CheckedIn(msg.sender, answerHash, question, block.number);
     }
 
     // ------------------------------

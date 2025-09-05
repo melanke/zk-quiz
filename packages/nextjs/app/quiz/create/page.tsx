@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
@@ -12,12 +12,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card"
 import { Input } from "~~/components/ui/input";
 import { Textarea } from "~~/components/ui/textarea";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { createDependentAnswer, hasQuestionStored, markQuestionSubmitted, saveQuestion } from "~~/utils/localStorage";
+import {
+  createDependentAnswer,
+  getAnswerStatus,
+  hasQuestionStored,
+  markAnswerSubmitted,
+  markQuestionSubmitted,
+  saveAnswer,
+  saveQuestion,
+} from "~~/utils/localStorage";
 import { poseidonHashBigInt, strToBigInt } from "~~/utils/zk";
 
 // Removed stringToBytes32 function as questions are now stored as strings
 
-export default function CreateQuestionPage() {
+function CreateQuestionContent() {
   const { address } = useAccount();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,6 +40,9 @@ export default function CreateQuestionPage() {
   const [questionExists, setQuestionExists] = useState(false);
   const [alreadyStored, setAlreadyStored] = useState(false);
   const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [dependencyAnswerStatus, setDependencyAnswerStatus] = useState<
+    "not_answered" | "pending_submission" | "submitted" | "loading"
+  >("loading");
 
   const { writeContractAsync: write } = useScaffoldWriteContract({
     contractName: "Quiz",
@@ -124,6 +135,16 @@ export default function CreateQuestionPage() {
     return () => clearTimeout(timeoutId);
   }, [answer, address, dependencyHash]);
 
+  // Check dependency answer status
+  useEffect(() => {
+    if (dependencyHash && address) {
+      const status = getAnswerStatus(dependencyHash, address);
+      setDependencyAnswerStatus(status);
+    } else {
+      setDependencyAnswerStatus("loading");
+    }
+  }, [dependencyHash, address]);
+
   // Check if question exists in contract when answerHash changes
   useEffect(() => {
     if (existingQuestion) {
@@ -159,6 +180,22 @@ export default function CreateQuestionPage() {
       return;
     }
 
+    // Check if dependency question has been answered and submitted
+    if (dependencyHash && dependencyAnswerStatus !== "submitted") {
+      if (dependencyAnswerStatus === "not_answered") {
+        toast.error("You must answer the dependency question first before creating a dependent question.");
+        return;
+      } else if (dependencyAnswerStatus === "pending_submission") {
+        toast.error(
+          "You must submit your answer to the dependency question to the contract first before creating a dependent question.",
+        );
+        return;
+      } else if (dependencyAnswerStatus === "loading") {
+        toast.error("Please wait while we check the dependency status.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -174,7 +211,15 @@ export default function CreateQuestionPage() {
       saveQuestion(answerHash, question.trim(), answer.trim(), address);
       markQuestionSubmitted(answerHash, address);
 
-      toast.success("Question created successfully!");
+      // Automatically save the answer knowledge (mark as answered locally)
+      saveAnswer(answerHash, question.trim(), answer.trim(), address);
+
+      // Mark that the answer was submitted to the contract
+      // Use current timestamp as approximation (the contract will emit the actual block number)
+      const blockNumber = Date.now(); // Use timestamp as fallback since txResult doesn't have blockNumber
+      markAnswerSubmitted(answerHash, Number(blockNumber), address);
+
+      toast.success("Question created successfully! Your answer knowledge has been automatically saved.");
       router.push("/quiz");
     } catch (error) {
       console.error("Error submitting question:", error);
@@ -192,7 +237,8 @@ export default function CreateQuestionPage() {
     answer.length <= 15 &&
     !isSubmitting &&
     !isCalculating &&
-    !isChecking;
+    !isChecking &&
+    (dependencyHash ? dependencyAnswerStatus === "submitted" : true);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -218,13 +264,15 @@ export default function CreateQuestionPage() {
           {dependencyHash && (
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-blue-600">🔗</span>
-                <h3 className="font-semibold text-blue-700 dark:text-blue-300">Creating Dependent Question</h3>
+                <span className="text-blue-600 dark:text-blue-400">🔗</span>
+                <h3 className="font-semibold text-gray-800 dark:text-blue-300">Creating Dependent Question</h3>
               </div>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">This question will depend on:</p>
-              <div className="bg-white dark:bg-gray-800 p-3 rounded border">
-                <p className="font-medium">{dependencyQuestion || "Loading dependency..."}</p>
-                <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-gray-700 dark:text-blue-400 mb-3">This question will depend on:</p>
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  {dependencyQuestion || "Loading dependency..."}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   Your answer will be automatically concatenated with the dependency answer when submitted.
                 </p>
               </div>
@@ -287,6 +335,55 @@ export default function CreateQuestionPage() {
               </Alert>
             )}
 
+            {/* Dependency Status Loading */}
+            {dependencyHash && dependencyAnswerStatus === "loading" && (
+              <Alert variant="default">
+                <AlertDescription>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Checking dependency status...</span>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Dependency Warning - Only show when there are issues and not loading */}
+            {dependencyHash && dependencyAnswerStatus !== "submitted" && dependencyAnswerStatus !== "loading" && (
+              <Alert
+                variant={dependencyAnswerStatus === "not_answered" ? "destructive" : "default"}
+                className={
+                  dependencyAnswerStatus === "pending_submission"
+                    ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+                    : ""
+                }
+              >
+                <AlertDescription>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                      <p className="font-semibold m-0">
+                        {dependencyAnswerStatus === "not_answered"
+                          ? "Dependency Question Not Answered"
+                          : "Dependency Answer Not Submitted"}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm flex-1 m-0">
+                        {dependencyAnswerStatus === "not_answered"
+                          ? "You must answer the dependency question first before creating a dependent question."
+                          : "You must submit your answer to the contract before creating a dependent question."}
+                      </p>
+                      <Button variant="outline" size="sm" asChild className="flex-shrink-0">
+                        <Link href={`/quiz/question/${dependencyHash}`}>
+                          {dependencyAnswerStatus === "not_answered" ? "Answer Question" : "View Question"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Submit Button */}
             <div className="border-t pt-6">
               <Button className="w-full" onClick={handleSubmitQuestion} disabled={!canSubmit}>
@@ -312,5 +409,22 @@ export default function CreateQuestionPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CreateQuestionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+            <p className="mt-2">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <CreateQuestionContent />
+    </Suspense>
   );
 }
